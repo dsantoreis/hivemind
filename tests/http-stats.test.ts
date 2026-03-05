@@ -81,6 +81,37 @@ describe("HTTP /stats", () => {
     ]);
   });
 
+  it("ordena alfabeticamente quando contagem empata no ranking top", async () => {
+    const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
+    const app = createAppServer(orchestrator);
+    runningServers.push(app);
+
+    app.server.listen(0);
+    await once(app.server, "listening");
+
+    const address = app.server.address();
+    if (!address || typeof address === "string") throw new Error("Address inválido");
+
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    await fetch(`${baseUrl}/diag`);
+    await fetch(`${baseUrl}/diag`);
+    await fetch(`${baseUrl}/metrics`);
+    await fetch(`${baseUrl}/metrics`);
+
+    const statsRes = await fetch(`${baseUrl}/stats?top=2`);
+    expect(statsRes.status).toBe(200);
+
+    const statsBody = (await statsRes.json()) as {
+      topEndpoints: Array<{ path: string; count: number }>;
+    };
+
+    expect(statsBody.topEndpoints).toEqual([
+      { path: "/diag", count: 2 },
+      { path: "/metrics", count: 2 }
+    ]);
+  });
+
   it("reseta contadores quando chamado com ?reset=1", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);

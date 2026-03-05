@@ -235,7 +235,11 @@ async function route(
     const topRaw = requestUrl.searchParams.get("top");
     const topLimit = topRaw ? Number(topRaw) : Number.NaN;
 
-    const sortedEndpoints = Array.from(requestsByEndpoint.entries()).sort((a, b) => b[1] - a[1]);
+    const sortedEndpoints = Array.from(requestsByEndpoint.entries()).sort((a, b) => {
+      const countDelta = b[1] - a[1];
+      if (countDelta !== 0) return countDelta;
+      return a[0].localeCompare(b[0]);
+    });
     const topEndpoints = Number.isFinite(topLimit) && topLimit > 0
       ? sortedEndpoints.slice(0, Math.floor(topLimit)).map(([path, count]) => ({ path, count }))
       : [];
