@@ -13,7 +13,7 @@ afterEach(async () => {
 });
 
 describe("HTTP endpoints", () => {
-  it("expõe /health e /metrics", async () => {
+  it("expõe /health, /metrics e /version", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);
     runningServers.push(app);
@@ -37,6 +37,12 @@ describe("HTTP endpoints", () => {
     const metricsBody = (await metricsRes.json()) as { counters: Record<string, number>; durations: Record<string, unknown> };
     expect(metricsBody).toHaveProperty("counters");
     expect(metricsBody).toHaveProperty("durations");
+
+    const versionRes = await fetch(`${baseUrl}/version`);
+    expect(versionRes.status).toBe(200);
+    const versionBody = (await versionRes.json()) as { commitHash: string; buildTime: string };
+    expect(versionBody.commitHash).toMatch(/^[0-9a-f]{7,40}$|^unknown$/i);
+    expect(Number.isNaN(Date.parse(versionBody.buildTime))).toBe(false);
   });
 
   it("executa workflow no POST /run e retorna traceId", async () => {

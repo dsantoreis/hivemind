@@ -1,11 +1,29 @@
 import { createServer as createHttpServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { randomUUID } from "node:crypto";
+import { execSync } from "node:child_process";
 import { ReliableMultiAgentOrchestrator } from "./orchestrator.js";
 import type { TaskInput } from "./types.js";
 
 export interface AppServer {
   server: Server;
   close: () => Promise<void>;
+}
+
+function resolveCommitHash(): string {
+  const fromEnv = process.env.COMMIT_HASH?.trim();
+  if (fromEnv) return fromEnv;
+
+  try {
+    return execSync("git rev-parse --short HEAD", { encoding: "utf-8" }).trim();
+  } catch {
+    return "unknown";
+  }
+}
+
+function resolveBuildTime(): string {
+  const fromEnv = process.env.BUILD_TIME?.trim();
+  if (fromEnv) return fromEnv;
+  return new Date().toISOString();
 }
 
 function sendJson(res: ServerResponse, statusCode: number, payload: unknown) {
@@ -42,7 +60,8 @@ async function route(
   req: IncomingMessage,
   res: ServerResponse,
   orchestrator: ReliableMultiAgentOrchestrator,
-  startedAt: number
+  startedAt: number,
+  buildInfo: { commitHash: string; buildTime: string }
 ) {
   if (req.method === "GET" && req.url === "/health") {
     sendJson(res, 200, {
@@ -55,6 +74,14 @@ async function route(
 
   if (req.method === "GET" && req.url === "/metrics") {
     sendJson(res, 200, orchestrator.getMetricsSnapshot());
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/version") {
+    sendJson(res, 200, {
+      commitHash: buildInfo.commitHash,
+      buildTime: buildInfo.buildTime
+    });
     return;
   }
 
@@ -99,8 +126,13 @@ async function route(
 
 export function createAppServer(orchestrator: ReliableMultiAgentOrchestrator): AppServer {
   const startedAt = Date.now();
+  const buildInfo = {
+    commitHash: resolveCommitHash(),
+    buildTime: resolveBuildTime()
+  };
+
   const server = createHttpServer((req, res) => {
-    route(req, res, orchestrator, startedAt).catch((error) => {
+    route(req, res, orchestrator, startedAt, buildInfo).catch((error) => {
       sendJson(res, 500, {
         status: "error",
         message: "internal_server_error",
@@ -128,6 +160,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
   server.listen(port, () => {
     console.log(`HTTP server listening on http://localhost:${port}`);
-    console.log("Endpoints: GET /health | GET /metrics | POST /run");
+    console.log("Endpoints: GET /health | GET /metrics | GET /version | POST /run");
   });
 }
