@@ -96,6 +96,7 @@ const OPENAPI_LITE_ENDPOINTS = [
   { method: "GET", path: "/meta-lite", summary: "Metadados mínimos: name, version, uptimeSec" },
   { method: "GET", path: "/metrics", summary: "Snapshot de métricas" },
   { method: "GET", path: "/diag", summary: "Resumo de diagnóstico sem segredos" },
+  { method: "GET", path: "/diag-lite", summary: "Diagnóstico mínimo: ready, queueDepth, agentCount" },
   { method: "GET", path: "/build-info", summary: "Metadados de build" },
   { method: "GET", path: "/build-lite", summary: "Build mínimo: version + commit" },
   { method: "GET", path: "/routes-hash", summary: "Hash SHA-256 estável de métodos+rotas expostos" },
@@ -215,6 +216,16 @@ async function route(
 
   if (req.method === "GET" && endpoint === "/diag") {
     sendJson(res, 200, orchestrator.getDiagnosticSummary());
+    return;
+  }
+
+  if (req.method === "GET" && endpoint === "/diag-lite") {
+    const diag = orchestrator.getDiagnosticSummary();
+    sendJson(res, 200, {
+      ready: diag.runtime.readiness.ready,
+      queueDepth: diag.runtime.queueDepth,
+      agentCount: diag.orchestrator.agentCount
+    });
     return;
   }
 
@@ -340,7 +351,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   server.listen(port, () => {
     console.log(`HTTP server listening on http://localhost:${port}`);
     console.log(
-      "Endpoints: GET /health | GET /alivez | GET /healthz-lite | GET /pingz | GET /stats | GET /timez | GET /readyz | GET /readyz-lite | GET /statusz | GET /meta-lite | GET /metrics | GET /diag | GET /build-info | GET /build-lite | GET /routes-hash | GET /openapi-lite | POST /run"
+      "Endpoints: GET /health | GET /alivez | GET /healthz-lite | GET /pingz | GET /stats | GET /timez | GET /readyz | GET /readyz-lite | GET /statusz | GET /meta-lite | GET /metrics | GET /diag | GET /diag-lite | GET /build-info | GET /build-lite | GET /routes-hash | GET /openapi-lite | POST /run"
     );
   });
 }

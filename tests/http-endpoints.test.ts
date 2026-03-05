@@ -14,7 +14,7 @@ afterEach(async () => {
 });
 
 describe("HTTP endpoints", () => {
-  it("expõe /health, /alivez, /healthz-lite, /pingz, /timez, /readyz, /readyz-lite, /statusz, /meta-lite, /metrics, /diag, /build-info, /build-lite, /routes-hash e /openapi-lite", async () => {
+  it("expõe /health, /alivez, /healthz-lite, /pingz, /timez, /readyz, /readyz-lite, /statusz, /meta-lite, /metrics, /diag, /diag-lite, /build-info, /build-lite, /routes-hash e /openapi-lite", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);
     runningServers.push(app);
@@ -122,6 +122,19 @@ describe("HTTP endpoints", () => {
 
     expect("STATE_FILE" in diagBody.config).toBe(false);
 
+    const diagLiteRes = await fetch(`${baseUrl}/diag-lite`);
+    expect(diagLiteRes.status).toBe(200);
+    const diagLiteBody = (await diagLiteRes.json()) as {
+      ready: boolean;
+      queueDepth: number;
+      agentCount: number;
+    };
+    expect(diagLiteBody.ready).toBe(diagBody.runtime.readiness.ready);
+    expect(diagLiteBody.queueDepth).toBeGreaterThanOrEqual(0);
+    expect(diagLiteBody.agentCount).toBe(diagBody.orchestrator.agentCount);
+    expect("config" in diagLiteBody).toBe(false);
+    expect("metrics" in diagLiteBody).toBe(false);
+
     const buildInfoRes = await fetch(`${baseUrl}/build-info`);
     expect(buildInfoRes.status).toBe(200);
     const buildInfoBody = (await buildInfoRes.json()) as {
@@ -170,6 +183,7 @@ describe("HTTP endpoints", () => {
         expect.objectContaining({ method: "GET", path: "/readyz-lite" }),
         expect.objectContaining({ method: "GET", path: "/statusz" }),
         expect.objectContaining({ method: "GET", path: "/meta-lite" }),
+        expect.objectContaining({ method: "GET", path: "/diag-lite" }),
         expect.objectContaining({ method: "GET", path: "/build-lite" }),
         expect.objectContaining({ method: "GET", path: "/routes-hash" }),
         expect.objectContaining({ method: "GET", path: "/openapi-lite" }),
