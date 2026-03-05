@@ -4,6 +4,7 @@ from ai_agent_demo.main import app
 from ai_agent_demo.models import SearchHit
 
 client = TestClient(app)
+AUTH = {"x-api-key": "dev-api-key"}
 
 
 def test_research_workflow_endpoint_and_retrieval(monkeypatch):
@@ -28,6 +29,7 @@ def test_research_workflow_endpoint_and_retrieval(monkeypatch):
     create_resp = client.post(
         "/v1/research/workflows",
         json={"query": " fastapi performance ", "max_results": 1, "max_sources_to_read": 1},
+        headers=AUTH,
     )
     assert create_resp.status_code == 200
     body = create_resp.json()
@@ -36,17 +38,22 @@ def test_research_workflow_endpoint_and_retrieval(monkeypatch):
     assert len(body["tool_calls"]) == 4
 
     workflow_id = body["workflow_id"]
-    get_resp = client.get(f"/v1/research/workflows/{workflow_id}")
+    get_resp = client.get(f"/v1/research/workflows/{workflow_id}", headers=AUTH)
     assert get_resp.status_code == 200
     assert get_resp.json()["workflow_id"] == workflow_id
 
 
 def test_not_found_workflow():
-    resp = client.get("/v1/research/workflows/wf_unknown")
+    resp = client.get("/v1/research/workflows/wf_unknown", headers=AUTH)
     assert resp.status_code == 404
     assert resp.json()["detail"] == "workflow_not_found"
 
 
 def test_validation_error_for_short_query():
-    resp = client.post("/v1/research/workflows", json={"query": "abc"})
+    resp = client.post("/v1/research/workflows", json={"query": "abc"}, headers=AUTH)
     assert resp.status_code == 422
+
+
+def test_unauthorized_without_headers():
+    resp = client.get("/v1/research/workflows/wf_unknown")
+    assert resp.status_code == 401

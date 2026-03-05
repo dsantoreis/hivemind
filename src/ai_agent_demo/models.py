@@ -42,6 +42,12 @@ class WorkflowResult(BaseModel):
     workflow_id: str
     query: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    status: Literal["queued", "running", "completed", "failed"] = "completed"
     tool_calls: list[ToolCall]
     sources: list[SourceNote]
     final_report_markdown: str
+
+
+class AuthTokenResponse(BaseModel):
+    access_token: str
+    token_type: Literal["bearer"] = "bearer"

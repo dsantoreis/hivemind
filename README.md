@@ -1,44 +1,33 @@
-# 🚀 AI Agent Demo — Portfolio-Grade FastAPI Multi-Agent Orchestration
+# AI Agent Demo — Enterprise Multi-Agent Workflow Platform
 
-[![CI](https://github.com/example/ai-agent-demo/actions/workflows/ci.yml/badge.svg)](./.github/workflows/ci.yml)
-[![Python](https://img.shields.io/badge/python-3.11%2B-blue)](./pyproject.toml)
-[![Docker](https://img.shields.io/badge/docker-multi--stage-2496ED)](./Dockerfile)
+[![CI](./.github/workflows/ci.yml)](./.github/workflows/ci.yml)
 
-> A production-style FastAPI project that runs a **real multi-agent workflow** with **real tool-calling** (web search + page fetch + parsing + report generation).
+Production-style FastAPI orchestration + Next.js real-time dashboard for multi-agent workflows.
 
-## Hero
+## Highlights
 
-Transform a user objective into a structured research brief with citations in one API call.
-
-```json
-POST /v1/research/workflows
-{
-  "query": "FastAPI for multi-agent orchestration",
-  "max_results": 5,
-  "max_sources_to_read": 3
-}
-```
-
-Returns:
-- full execution trace (`tool_calls`)
-- parsed source notes
-- final markdown report
+- **Real-time dashboard (Next.js/React)**: `frontend-next/` polling workflow stream every 2s.
+- **Auth**: API Key and JWT (`POST /auth/token`).
+- **Rate limiting**: in-memory sliding window guard (`429`).
+- **Structured logging JSON**: startup, workflow creation, shutdown events.
+- **Observability**:
+  - Prometheus metrics at `GET /metrics`
+  - OpenTelemetry tracing (OTLP exporter, env-driven)
+- **Graceful shutdown**: FastAPI lifespan hook with explicit shutdown logs.
+- **CI pipeline**: lint + unit + integration + e2e + coverage gate `>80%`.
+- **Containers/K8s**: Docker multi-stage + manifests (Deployment/Service/HPA).
+- **Performance/Resilience testing**:
+  - k6 load test (`1000 rps`, `5m`) in `load-tests/k6-workflows.js`
+  - chaos simulation in `chaos/fault_injection_test.py`
+  - soak script (`1h`) in `soak/soak_test.sh`
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    U[User/API Client] --> A[FastAPI Endpoint]
-    A --> P[Planner Agent]
-    P --> S[Research Agent\nTool: web_search]
-    S --> F[Reader Agent\nTool: web_fetch]
-    F --> X[Parser Agent\nTool: parser]
-    X --> R[Reporter Agent\nTool: report_builder]
-    R --> O[(Workflow Store)]
-    O --> U
-```
+- Backend: FastAPI (`src/ai_agent_demo`)
+- Dashboard: Next.js (`frontend-next`)
+- Tests: pytest + vitest
 
-## Quickstart (3 commands)
+## Quickstart
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
@@ -46,46 +35,41 @@ pip install -e .[dev]
 uvicorn ai_agent_demo.main:app --reload
 ```
 
-Open: `http://127.0.0.1:8000/docs`
+### Dashboard
+
+```bash
+cd frontend-next
+npm install
+npm run dev
+```
 
 ## API
 
+- `POST /auth/token` (header: `x-api-key`)
 - `GET /health`
-- `POST /v1/research/workflows`
+- `GET /metrics`
+- `POST /v1/research/workflows` (auth required)
+- `GET /v1/research/workflows`
 - `GET /v1/research/workflows/{workflow_id}`
+- `GET /v1/research/stream`
 
-## Local quality gate
+## Benchmark Table (placeholder results)
+
+| Scenario | Target | Result | Notes |
+|---|---:|---:|---|
+| k6 create workflow | 1000 rps / 5 min | _pending run_ | `load-tests/k6-workflows.js` |
+| Chaos fault injection | 50% flaky search | pass/fail tolerant | `chaos/fault_injection_test.py` |
+| Soak endurance | 1h | _pending run_ | `soak/soak_test.sh` |
+
+## Screenshot placeholders
+
+- `docs/screenshots/dashboard-overview.png`
+- `docs/screenshots/workflow-table.png`
+- `docs/screenshots/metrics-panel.png`
+
+## Kubernetes
 
 ```bash
-ruff check .
-pytest -q
-docker build -t ai-agent-demo:local .
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/hpa.yaml
 ```
-
-## Docker
-
-Run with compose:
-
-```bash
-docker compose up --build
-```
-
-## Project structure
-
-```text
-src/ai_agent_demo/
-  main.py
-  orchestrator.py
-  tools.py
-  models.py
-  storage.py
-tests/
-docs/
-.github/workflows/
-```
-
-## Notes
-
-- Micro health/status endpoint sprawl removed.
-- API consolidated around a real business use case: research workflow execution.
-- Tests validate orchestration logic and integration behavior, not only status codes.

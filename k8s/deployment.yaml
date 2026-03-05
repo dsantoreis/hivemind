@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-agent-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ai-agent-demo
+  template:
+    metadata:
+      labels:
+        app: ai-agent-demo
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/example/ai-agent-demo:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: AI_AGENT_DEMO_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ai-agent-demo-secrets
+                  key: api-key
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-agent-demo
+spec:
+  selector:
+    app: ai-agent-demo
+  ports:
+    - port: 80
+      targetPort: 8000
