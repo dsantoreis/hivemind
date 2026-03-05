@@ -281,7 +281,13 @@ async function route(
     return;
   }
 
-  if (req.method === "GET" && endpoint === "/pingz") {
+  if ((req.method === "GET" || req.method === "HEAD") && endpoint === "/pingz") {
+    if (req.method === "HEAD") {
+      res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
+      res.end();
+      return;
+    }
+
     const localLatencyMs = Number(process.hrtime.bigint() - startedAtNs) / 1_000_000;
     sendJson(res, 200, {
       status: "ok",

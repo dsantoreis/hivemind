@@ -70,6 +70,10 @@ describe("HTTP endpoints", () => {
     expect(pingzBody.localLatencyMs).toBeGreaterThanOrEqual(0);
     expect(Number.isNaN(Date.parse(pingzBody.timestamp))).toBe(false);
 
+    const pingzHeadRes = await fetch(`${baseUrl}/pingz`, { method: "HEAD" });
+    expect(pingzHeadRes.status).toBe(200);
+    expect(await pingzHeadRes.text()).toBe("");
+
     const timezRes = await fetch(`${baseUrl}/timez`);
     expect(timezRes.status).toBe(200);
     const timezBody = (await timezRes.json()) as { serverTimeUtc: string; uptimeSec: number };
