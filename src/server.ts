@@ -499,7 +499,13 @@ async function route(
     return;
   }
 
-  if (req.method === "GET" && endpoint === "/meta-lite") {
+  if ((req.method === "GET" || req.method === "HEAD") && endpoint === "/meta-lite") {
+    if (req.method === "HEAD") {
+      res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
+      res.end();
+      return;
+    }
+
     sendJson(res, 200, {
       name: "ai-agent-demo",
       version: buildInfo.version,

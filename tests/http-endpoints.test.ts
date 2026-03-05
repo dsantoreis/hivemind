@@ -653,7 +653,7 @@ describe("HTTP endpoints", () => {
     expect(statsBody.requestsByEndpoint["/uptimez"]).toBe(1);
   });
 
-  it("aceita HEAD em /versionz e /build-lite para probes sem payload", async () => {
+  it("aceita HEAD em /versionz, /build-lite e /meta-lite para probes sem payload", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);
     runningServers.push(app);
@@ -674,10 +674,15 @@ describe("HTTP endpoints", () => {
     expect(buildLiteHeadRes.status).toBe(200);
     expect(await buildLiteHeadRes.text()).toBe("");
 
+    const metaLiteHeadRes = await fetch(`${baseUrl}/meta-lite`, { method: "HEAD" });
+    expect(metaLiteHeadRes.status).toBe(200);
+    expect(await metaLiteHeadRes.text()).toBe("");
+
     const statsRes = await fetch(`${baseUrl}/stats`);
     const statsBody = (await statsRes.json()) as { requestsByEndpoint: Record<string, number> };
     expect(statsBody.requestsByEndpoint["/versionz"]).toBe(1);
     expect(statsBody.requestsByEndpoint["/build-lite"]).toBe(1);
+    expect(statsBody.requestsByEndpoint["/meta-lite"]).toBe(1);
   });
 
   it("retorna 415 quando POST /run não recebe content-type JSON", async () => {
