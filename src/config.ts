@@ -7,11 +7,12 @@ export interface AppConfig {
   logLevel: "debug" | "info" | "warn" | "error";
 }
 
-function readInt(name: string, fallback: number): number {
+function readInt(name: string, fallback: number, min = Number.NEGATIVE_INFINITY): number {
   const raw = process.env[name];
   if (!raw) return fallback;
   const parsed = Number.parseInt(raw, 10);
-  return Number.isFinite(parsed) ? parsed : fallback;
+  if (!Number.isFinite(parsed) || parsed < min) return fallback;
+  return parsed;
 }
 
 function readLevel(): AppConfig["logLevel"] {
@@ -24,10 +25,10 @@ function readLevel(): AppConfig["logLevel"] {
 
 export function loadConfig(): AppConfig {
   return {
-    retryAttempts: readInt("RETRY_ATTEMPTS", 2),
-    retryDelayMs: readInt("RETRY_DELAY_MS", 30),
-    agentTimeoutMs: readInt("AGENT_TIMEOUT_MS", 1_000),
-    queueConcurrency: readInt("QUEUE_CONCURRENCY", 2),
+    retryAttempts: readInt("RETRY_ATTEMPTS", 2, 1),
+    retryDelayMs: readInt("RETRY_DELAY_MS", 30, 0),
+    agentTimeoutMs: readInt("AGENT_TIMEOUT_MS", 1_000, 1),
+    queueConcurrency: readInt("QUEUE_CONCURRENCY", 2, 1),
     stateFile: process.env.STATE_FILE ?? ".data/orchestrator-state.json",
     logLevel: readLevel()
   };
