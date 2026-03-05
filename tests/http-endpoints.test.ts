@@ -14,7 +14,7 @@ afterEach(async () => {
 });
 
 describe("HTTP endpoints", () => {
-  it("expõe /health, /alivez, /healthz-lite, /echoz, /pingz, /timez, /readyz, /readyz-lite, /statusz, /meta-lite, /metrics, /diag, /diag-lite, /build-info, /build-lite, /routes-hash e /openapi-lite", async () => {
+  it("expõe /health, /alivez, /healthz-lite, /echoz, /pingz, /timez, /readyz, /readyz-lite, /statusz, /versionz, /meta-lite, /metrics, /diag, /diag-lite, /build-info, /build-lite, /routes-hash e /openapi-lite", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);
     runningServers.push(app);
@@ -92,6 +92,13 @@ describe("HTTP endpoints", () => {
     expect(typeof statuszBody.uptimeSec).toBe("number");
     expect(statuszBody.uptimeSec).toBeGreaterThanOrEqual(0);
     expect(statuszBody.version).toMatch(/^\d+\.\d+\.\d+(-.+)?$|^unknown$/);
+
+    const versionzRes = await fetch(`${baseUrl}/versionz`);
+    expect(versionzRes.status).toBe(200);
+    const versionzBody = (await versionzRes.json()) as { version: string; commit: string; nodeVersion: string };
+    expect(versionzBody.version).toBe(statuszBody.version);
+    expect(versionzBody.commit).toMatch(/^[0-9a-f]{7,40}$|^unknown$/i);
+    expect(versionzBody.nodeVersion).toMatch(/^v\d+\.\d+\.\d+/);
 
     const metaLiteRes = await fetch(`${baseUrl}/meta-lite`);
     expect(metaLiteRes.status).toBe(200);
@@ -189,6 +196,7 @@ describe("HTTP endpoints", () => {
         expect.objectContaining({ method: "GET", path: "/timez" }),
         expect.objectContaining({ method: "GET", path: "/readyz-lite" }),
         expect.objectContaining({ method: "GET", path: "/statusz" }),
+        expect.objectContaining({ method: "GET", path: "/versionz" }),
         expect.objectContaining({ method: "GET", path: "/meta-lite" }),
         expect.objectContaining({ method: "GET", path: "/diag-lite" }),
         expect.objectContaining({ method: "GET", path: "/build-lite" }),

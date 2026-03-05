@@ -101,6 +101,7 @@ const OPENAPI_LITE_ENDPOINTS = [
   { method: "GET", path: "/readyz", summary: "Prontidão do orchestrator e dependências" },
   { method: "GET", path: "/readyz-lite", summary: "Prontidão compacta: ready + uptimeSec" },
   { method: "GET", path: "/statusz", summary: "Resumo compacto: ready, uptimeSec, version" },
+  { method: "GET", path: "/versionz", summary: "Versão runtime: version, commit, nodeVersion" },
   { method: "GET", path: "/meta-lite", summary: "Metadados mínimos: name, version, uptimeSec" },
   { method: "GET", path: "/metrics", summary: "Snapshot de métricas" },
   { method: "GET", path: "/diag", summary: "Resumo de diagnóstico sem segredos" },
@@ -212,6 +213,15 @@ async function route(
       ready: readiness.ready,
       uptimeSec: Math.floor((Date.now() - startedAt) / 1000),
       version: buildInfo.version
+    });
+    return;
+  }
+
+  if (req.method === "GET" && endpoint === "/versionz") {
+    sendJson(res, 200, {
+      version: buildInfo.version,
+      commit: buildInfo.commit,
+      nodeVersion: buildInfo.nodeVersion
     });
     return;
   }
@@ -376,7 +386,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   server.listen(port, () => {
     console.log(`HTTP server listening on http://localhost:${port}`);
     console.log(
-      "Endpoints: GET /health | GET /alivez | GET /healthz-lite | GET /echoz | GET /pingz | GET /stats | GET /timez | GET /readyz | GET /readyz-lite | GET /statusz | GET /meta-lite | GET /metrics | GET /diag | GET /diag-lite | GET /build-info | GET /build-lite | GET /routes-hash | GET /openapi-lite | POST /run"
+      "Endpoints: GET /health | GET /alivez | GET /healthz-lite | GET /echoz | GET /pingz | GET /stats | GET /timez | GET /readyz | GET /readyz-lite | GET /statusz | GET /versionz | GET /meta-lite | GET /metrics | GET /diag | GET /diag-lite | GET /build-info | GET /build-lite | GET /routes-hash | GET /openapi-lite | POST /run"
     );
   });
 }
