@@ -95,8 +95,11 @@ function validateTaskInput(payload: unknown): { valid: boolean; errors: string[]
     errors.push("id must be a string when provided");
   }
 
-  if (candidate.context !== undefined && (typeof candidate.context !== "object" || candidate.context === null)) {
-    errors.push("context must be an object when provided");
+  if (
+    candidate.context !== undefined &&
+    (typeof candidate.context !== "object" || candidate.context === null || Array.isArray(candidate.context))
+  ) {
+    errors.push("context must be a non-array object when provided");
   }
 
   return {
