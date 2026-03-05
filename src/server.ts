@@ -290,7 +290,13 @@ async function route(
     return;
   }
 
-  if (req.method === "GET" && endpoint === "/statusz") {
+  if ((req.method === "GET" || req.method === "HEAD") && endpoint === "/statusz") {
+    if (req.method === "HEAD") {
+      res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
+      res.end();
+      return;
+    }
+
     const readiness = orchestrator.getReadiness();
     sendJson(res, 200, {
       ready: readiness.ready,
