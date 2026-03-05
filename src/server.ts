@@ -85,6 +85,7 @@ function isTaskInput(payload: unknown): payload is TaskInput {
 
 const OPENAPI_LITE_ENDPOINTS = [
   { method: "GET", path: "/health", summary: "Status do processo" },
+  { method: "GET", path: "/alivez", summary: "Status mínimo de vida do processo" },
   { method: "GET", path: "/healthz-lite", summary: "Health mínimo com status + uptimeSec" },
   { method: "GET", path: "/pingz", summary: "Latência local do request + timestamp" },
   { method: "GET", path: "/stats", summary: "Requests agregados por endpoint + uptime" },
@@ -123,6 +124,13 @@ async function route(
       status: "ok",
       uptimeSec: Math.floor((Date.now() - startedAt) / 1000),
       timestamp: new Date().toISOString()
+    });
+    return;
+  }
+
+  if (req.method === "GET" && endpoint === "/alivez") {
+    sendJson(res, 200, {
+      status: "alive"
     });
     return;
   }
@@ -332,7 +340,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   server.listen(port, () => {
     console.log(`HTTP server listening on http://localhost:${port}`);
     console.log(
-      "Endpoints: GET /health | GET /healthz-lite | GET /pingz | GET /stats | GET /timez | GET /readyz | GET /readyz-lite | GET /statusz | GET /meta-lite | GET /metrics | GET /diag | GET /build-info | GET /build-lite | GET /routes-hash | GET /openapi-lite | POST /run"
+      "Endpoints: GET /health | GET /alivez | GET /healthz-lite | GET /pingz | GET /stats | GET /timez | GET /readyz | GET /readyz-lite | GET /statusz | GET /meta-lite | GET /metrics | GET /diag | GET /build-info | GET /build-lite | GET /routes-hash | GET /openapi-lite | POST /run"
     );
   });
 }
