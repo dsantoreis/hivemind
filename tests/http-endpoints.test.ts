@@ -14,7 +14,7 @@ afterEach(async () => {
 });
 
 describe("HTTP endpoints", () => {
-  it("expõe /health, /healthz-lite, /pingz, /timez, /readyz, /readyz-lite, /statusz, /meta-lite, /metrics, /diag, /build-info, /routes-hash e /openapi-lite", async () => {
+  it("expõe /health, /healthz-lite, /pingz, /timez, /readyz, /readyz-lite, /statusz, /meta-lite, /metrics, /diag, /build-info, /build-lite, /routes-hash e /openapi-lite", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);
     runningServers.push(app);
@@ -130,6 +130,15 @@ describe("HTTP endpoints", () => {
     expect(Number.isNaN(Date.parse(buildInfoBody.buildTime))).toBe(false);
     expect(buildInfoBody.nodeVersion).toMatch(/^v\d+\.\d+\.\d+/);
 
+    const buildLiteRes = await fetch(`${baseUrl}/build-lite`);
+    expect(buildLiteRes.status).toBe(200);
+    const buildLiteBody = (await buildLiteRes.json()) as {
+      version: string;
+      commit: string;
+    };
+    expect(buildLiteBody.version).toBe(buildInfoBody.version);
+    expect(buildLiteBody.commit).toBe(buildInfoBody.commit);
+
     const routesHashRes = await fetch(`${baseUrl}/routes-hash`);
     expect(routesHashRes.status).toBe(200);
     const routesHashBody = (await routesHashRes.json()) as { algorithm: string; hash: string };
@@ -155,6 +164,7 @@ describe("HTTP endpoints", () => {
         expect.objectContaining({ method: "GET", path: "/readyz-lite" }),
         expect.objectContaining({ method: "GET", path: "/statusz" }),
         expect.objectContaining({ method: "GET", path: "/meta-lite" }),
+        expect.objectContaining({ method: "GET", path: "/build-lite" }),
         expect.objectContaining({ method: "GET", path: "/routes-hash" }),
         expect.objectContaining({ method: "GET", path: "/openapi-lite" }),
         expect.objectContaining({ method: "POST", path: "/run" })

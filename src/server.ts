@@ -96,6 +96,7 @@ const OPENAPI_LITE_ENDPOINTS = [
   { method: "GET", path: "/metrics", summary: "Snapshot de métricas" },
   { method: "GET", path: "/diag", summary: "Resumo de diagnóstico sem segredos" },
   { method: "GET", path: "/build-info", summary: "Metadados de build" },
+  { method: "GET", path: "/build-lite", summary: "Build mínimo: version + commit" },
   { method: "GET", path: "/routes-hash", summary: "Hash SHA-256 estável de métodos+rotas expostos" },
   { method: "GET", path: "/openapi-lite", summary: "Lista resumida dos endpoints HTTP" },
   { method: "POST", path: "/run", summary: "Executa workflow mínimo e retorna traceId" }
@@ -214,6 +215,14 @@ async function route(
     return;
   }
 
+  if (req.method === "GET" && endpoint === "/build-lite") {
+    sendJson(res, 200, {
+      version: buildInfo.version,
+      commit: buildInfo.commit
+    });
+    return;
+  }
+
   if (req.method === "GET" && endpoint === "/routes-hash") {
     sendJson(res, 200, {
       algorithm: "sha256",
@@ -323,7 +332,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   server.listen(port, () => {
     console.log(`HTTP server listening on http://localhost:${port}`);
     console.log(
-      "Endpoints: GET /health | GET /healthz-lite | GET /pingz | GET /stats | GET /timez | GET /readyz | GET /readyz-lite | GET /statusz | GET /meta-lite | GET /metrics | GET /diag | GET /build-info | GET /routes-hash | GET /openapi-lite | POST /run"
+      "Endpoints: GET /health | GET /healthz-lite | GET /pingz | GET /stats | GET /timez | GET /readyz | GET /readyz-lite | GET /statusz | GET /meta-lite | GET /metrics | GET /diag | GET /build-info | GET /build-lite | GET /routes-hash | GET /openapi-lite | POST /run"
     );
   });
 }
