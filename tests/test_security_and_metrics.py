@@ -24,8 +24,16 @@ def test_rate_limit_guard(monkeypatch):
     rate_limiter.reset()
     headers = {"x-api-key": "dev-api-key"}
 
-    first = client.post("/v1/research/workflows", json={"query": "fastapi observability"}, headers=headers)
+    first = client.post(
+        "/v1/research/workflows",
+        json={"query": "fastapi observability"},
+        headers=headers,
+    )
     assert first.status_code in (200, 500)
 
-    second = client.post("/v1/research/workflows", json={"query": "fastapi observability"}, headers=headers)
+    second = client.post(
+        "/v1/research/workflows",
+        json={"query": "fastapi observability"},
+        headers=headers,
+    )
     assert second.status_code == 429

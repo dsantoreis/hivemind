@@ -8,8 +8,16 @@ from contextlib import suppress
 from fastapi import Request, Response
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
 
-REQUEST_COUNT = Counter("ai_agent_demo_http_requests_total", "Total requests", ["method", "path", "status"])
-REQUEST_LATENCY = Histogram("ai_agent_demo_http_latency_seconds", "Request latency", ["method", "path"])
+REQUEST_COUNT = Counter(
+    "ai_agent_demo_http_requests_total",
+    "Total requests",
+    ["method", "path", "status"],
+)
+REQUEST_LATENCY = Histogram(
+    "ai_agent_demo_http_latency_seconds",
+    "Request latency",
+    ["method", "path"],
+)
 WORKFLOW_COUNT = Counter("ai_agent_demo_workflows_total", "Total workflows created")
 
 
@@ -53,10 +61,10 @@ def metrics_response() -> Response:
 def setup_otel(app_name: str = "ai-agent-demo") -> None:
     with suppress(Exception):
         from opentelemetry import trace
+        from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
         from opentelemetry.sdk.resources import Resource
         from opentelemetry.sdk.trace import TracerProvider
         from opentelemetry.sdk.trace.export import BatchSpanProcessor
-        from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 
         provider = TracerProvider(resource=Resource.create({"service.name": app_name}))
         provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))

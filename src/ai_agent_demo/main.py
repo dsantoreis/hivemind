@@ -4,12 +4,18 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, HTTPException, Request, Header
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import StreamingResponse
 
 from .config import settings
 from .models import AuthTokenResponse, ResearchRequest, WorkflowResult
-from .observability import WORKFLOW_COUNT, configure_logging, metrics_middleware, metrics_response, setup_otel
+from .observability import (
+    WORKFLOW_COUNT,
+    configure_logging,
+    metrics_middleware,
+    metrics_response,
+    setup_otel,
+)
 from .orchestrator import run_research_workflow
 from .rate_limit import rate_limiter
 from .security import mint_jwt, require_auth
@@ -62,7 +68,10 @@ def create_research_workflow(
     result = run_research_workflow(req)
     store.save(result)
     WORKFLOW_COUNT.inc()
-    logger.info("workflow_created", extra={"extra": {"workflow_id": result.workflow_id, "query": req.query}})
+    logger.info(
+        "workflow_created",
+        extra={"extra": {"workflow_id": result.workflow_id, "query": req.query}},
+    )
     return result
 
 

@@ -12,7 +12,10 @@ def test_security_jwt_roundtrip():
 
 
 def test_tools_parsing_and_report():
-    txt = parse_html_to_text("<html><body><h1>Hello</h1><script>x=1</script><p>World sentence long enough for extraction.</p></body></html>")
+    txt = parse_html_to_text(
+        "<html><body><h1>Hello</h1><script>x=1</script>"
+        "<p>World sentence long enough for extraction.</p></body></html>"
+    )
     points = extract_key_points(txt)
     report = build_markdown_report("q", points, ["source"])
     assert "Hello" in txt

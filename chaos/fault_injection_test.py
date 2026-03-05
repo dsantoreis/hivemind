@@ -1,4 +1,5 @@
 import random
+
 from fastapi.testclient import TestClient
 
 from ai_agent_demo.main import app
@@ -14,5 +15,9 @@ def test_fault_injection_simulation(monkeypatch):
         return [SearchHit(title='ok', url='https://example.com', snippet='ok')]
 
     monkeypatch.setattr('ai_agent_demo.orchestrator.web_search', flaky_search)
-    resp = client.post('/v1/research/workflows', json={'query':'chaos engineering'}, headers={'x-api-key':'dev-api-key'})
+    resp = client.post(
+        '/v1/research/workflows',
+        json={'query': 'chaos engineering'},
+        headers={'x-api-key': 'dev-api-key'},
+    )
     assert resp.status_code in (200, 500)
