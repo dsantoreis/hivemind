@@ -133,6 +133,27 @@ function validateTaskInput(payload: unknown): { valid: boolean; errors: string[]
   };
 }
 
+function parsePositiveIntQueryParam(
+  requestUrl: URL,
+  paramName: string
+): { value: number | null; error: string | null } {
+  const rawValue = requestUrl.searchParams.get(paramName);
+  if (rawValue === null || rawValue.trim() === "") {
+    return { value: null, error: null };
+  }
+
+  if (!/^\d+$/.test(rawValue.trim())) {
+    return { value: null, error: `${paramName} must be a positive integer` };
+  }
+
+  const parsed = Number(rawValue);
+  if (!Number.isSafeInteger(parsed) || parsed <= 0) {
+    return { value: null, error: `${paramName} must be a positive integer` };
+  }
+
+  return { value: parsed, error: null };
+}
+
 const OPENAPI_LITE_ENDPOINTS = [
   { method: "GET", path: "/health", summary: "Status do processo" },
   { method: "GET", path: "/alivez", summary: "Status mínimo de vida do processo" },
@@ -240,10 +261,19 @@ async function route(
     const resetCounters = requestUrl.searchParams.get("reset") === "1";
     const excludeSelf = requestUrl.searchParams.get("excludeSelf") === "1";
     const endpointPrefix = requestUrl.searchParams.get("prefix")?.trim() ?? "";
-    const minCountRaw = requestUrl.searchParams.get("minCount");
-    const minCount = minCountRaw ? Number(minCountRaw) : Number.NaN;
-    const topRaw = requestUrl.searchParams.get("top");
-    const topLimit = topRaw ? Number(topRaw) : Number.NaN;
+    const minCountParse = parsePositiveIntQueryParam(requestUrl, "minCount");
+    const topParse = parsePositiveIntQueryParam(requestUrl, "top");
+
+    if (minCountParse.error || topParse.error) {
+      sendJson(res, 400, {
+        error: "invalid_query_params",
+        details: [minCountParse.error, topParse.error].filter((value): value is string => Boolean(value))
+      });
+      return;
+    }
+
+    const minCount = minCountParse.value;
+    const topLimit = topParse.value;
 
     const effectiveRequestsByEndpoint = new Map(requestsByEndpoint);
     if (excludeSelf) {
@@ -256,8 +286,8 @@ async function route(
       ? new Map(Array.from(effectiveRequestsByEndpoint.entries()).filter(([path]) => path.startsWith(endpointPrefix)))
       : effectiveRequestsByEndpoint;
 
-    const filteredRequestsByEndpoint = Number.isFinite(minCount) && minCount > 0
-      ? new Map(Array.from(prefixedRequestsByEndpoint.entries()).filter(([, count]) => count >= Math.floor(minCount)))
+    const filteredRequestsByEndpoint = minCount
+      ? new Map(Array.from(prefixedRequestsByEndpoint.entries()).filter(([, count]) => count >= minCount))
       : prefixedRequestsByEndpoint;
 
     const sortedEndpoints = Array.from(filteredRequestsByEndpoint.entries()).sort((a, b) => {
@@ -265,8 +295,8 @@ async function route(
       if (countDelta !== 0) return countDelta;
       return a[0].localeCompare(b[0]);
     });
-    const topEndpoints = Number.isFinite(topLimit) && topLimit > 0
-      ? sortedEndpoints.slice(0, Math.floor(topLimit)).map(([path, count]) => ({ path, count }))
+    const topEndpoints = topLimit
+      ? sortedEndpoints.slice(0, topLimit).map(([path, count]) => ({ path, count }))
       : [];
 
     sendJson(res, 200, {
@@ -277,7 +307,7 @@ async function route(
       resetApplied: resetCounters,
       excludeSelfApplied: excludeSelf,
       prefixApplied: endpointPrefix.length > 0 ? endpointPrefix : null,
-      minCountApplied: Number.isFinite(minCount) && minCount > 0 ? Math.floor(minCount) : null
+      minCountApplied: minCount
     });
 
     if (resetCounters) {

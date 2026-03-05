@@ -210,6 +210,34 @@ describe("HTTP /stats", () => {
     });
   });
 
+  it("retorna 400 quando top/minCount são inválidos", async () => {
+    const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
+    const app = createAppServer(orchestrator);
+    runningServers.push(app);
+
+    app.server.listen(0);
+    await once(app.server, "listening");
+
+    const address = app.server.address();
+    if (!address || typeof address === "string") throw new Error("Address inválido");
+
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    const statsRes = await fetch(`${baseUrl}/stats?top=abc&minCount=-1`);
+    expect(statsRes.status).toBe(400);
+
+    const statsBody = (await statsRes.json()) as {
+      error: string;
+      details: string[];
+    };
+
+    expect(statsBody.error).toBe("invalid_query_params");
+    expect(statsBody.details).toEqual([
+      "minCount must be a positive integer",
+      "top must be a positive integer"
+    ]);
+  });
+
   it("reseta contadores quando chamado com ?reset=1", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);
