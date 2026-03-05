@@ -225,11 +225,19 @@ async function route(
 
   if (req.method === "GET" && endpoint === "/stats") {
     const resetCounters = requestUrl.searchParams.get("reset") === "1";
+    const topRaw = requestUrl.searchParams.get("top");
+    const topLimit = topRaw ? Number(topRaw) : Number.NaN;
+
+    const sortedEndpoints = Array.from(requestsByEndpoint.entries()).sort((a, b) => b[1] - a[1]);
+    const topEndpoints = Number.isFinite(topLimit) && topLimit > 0
+      ? sortedEndpoints.slice(0, Math.floor(topLimit)).map(([path, count]) => ({ path, count }))
+      : [];
 
     sendJson(res, 200, {
       uptimeSec: Math.floor((Date.now() - startedAt) / 1000),
       totalRequests: Array.from(requestsByEndpoint.values()).reduce((acc, current) => acc + current, 0),
       requestsByEndpoint: Object.fromEntries(requestsByEndpoint),
+      topEndpoints,
       resetApplied: resetCounters
     });
 
