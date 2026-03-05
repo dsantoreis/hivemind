@@ -225,6 +225,35 @@ describe("HTTP endpoints", () => {
     expect(statsBody.requestsByEndpoint["/health"]).toBe(1);
   });
 
+  it("retorna 415 quando POST /run não recebe content-type JSON", async () => {
+    const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
+    const app = createAppServer(orchestrator);
+    runningServers.push(app);
+
+    app.server.listen(0);
+    await once(app.server, "listening");
+
+    const address = app.server.address();
+    if (!address || typeof address === "string") throw new Error("Address inválido");
+
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    const runRes = await fetch(`${baseUrl}/run`, {
+      method: "POST",
+      headers: { "content-type": "text/plain" },
+      body: JSON.stringify({ goal: "payload válido, media type inválido" })
+    });
+
+    expect(runRes.status).toBe(415);
+
+    const body = (await runRes.json()) as { status: string; message: string; traceId: string };
+    expect(body.status).toBe("error");
+    expect(body.message).toBe("unsupported_media_type");
+    expect(body.traceId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    );
+  });
+
   it("retorna 400 para JSON malformado no POST /run", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);

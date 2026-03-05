@@ -54,6 +54,13 @@ class InvalidJsonBodyError extends Error {
   }
 }
 
+function isJsonContentType(contentTypeHeader: string | string[] | undefined): boolean {
+  if (!contentTypeHeader) return false;
+  const value = Array.isArray(contentTypeHeader) ? contentTypeHeader.join(",") : contentTypeHeader;
+  const normalized = value.toLowerCase();
+  return normalized.includes("application/json") || normalized.includes("+json");
+}
+
 async function readJsonBody(req: IncomingMessage): Promise<unknown> {
   const chunks: Buffer[] = [];
 
@@ -273,6 +280,15 @@ async function route(
 
   if (req.method === "POST" && endpoint === "/run") {
     const traceId = randomUUID();
+
+    if (!isJsonContentType(req.headers["content-type"])) {
+      sendJson(res, 415, {
+        status: "error",
+        message: "unsupported_media_type",
+        traceId
+      });
+      return;
+    }
 
     try {
       const payload = await readJsonBody(req);
