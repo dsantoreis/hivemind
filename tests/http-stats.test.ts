@@ -255,7 +255,7 @@ describe("HTTP /stats", () => {
     });
   });
 
-  it("retorna 400 quando top/minCount são inválidos", async () => {
+  it("permite ordenar top endpoints por menor contagem com ?sort=asc", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);
     runningServers.push(app);
@@ -268,7 +268,42 @@ describe("HTTP /stats", () => {
 
     const baseUrl = `http://127.0.0.1:${address.port}`;
 
-    const statsRes = await fetch(`${baseUrl}/stats?top=abc&minCount=-1`);
+    await fetch(`${baseUrl}/health`);
+    await fetch(`${baseUrl}/health`);
+    await fetch(`${baseUrl}/metrics`);
+    await fetch(`${baseUrl}/diag`);
+    await fetch(`${baseUrl}/diag`);
+    await fetch(`${baseUrl}/diag`);
+
+    const statsRes = await fetch(`${baseUrl}/stats?top=2&sort=asc&excludeSelf=1`);
+    expect(statsRes.status).toBe(200);
+
+    const statsBody = (await statsRes.json()) as {
+      sortApplied: string;
+      topEndpoints: Array<{ path: string; count: number }>;
+    };
+
+    expect(statsBody.sortApplied).toBe("asc");
+    expect(statsBody.topEndpoints).toEqual([
+      { path: "/metrics", count: 1 },
+      { path: "/health", count: 2 }
+    ]);
+  });
+
+  it("retorna 400 quando top/minCount/sort são inválidos", async () => {
+    const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
+    const app = createAppServer(orchestrator);
+    runningServers.push(app);
+
+    app.server.listen(0);
+    await once(app.server, "listening");
+
+    const address = app.server.address();
+    if (!address || typeof address === "string") throw new Error("Address inválido");
+
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    const statsRes = await fetch(`${baseUrl}/stats?top=abc&minCount=-1&sort=random`);
     expect(statsRes.status).toBe(400);
 
     const statsBody = (await statsRes.json()) as {
@@ -279,7 +314,8 @@ describe("HTTP /stats", () => {
     expect(statsBody.error).toBe("invalid_query_params");
     expect(statsBody.details).toEqual([
       "minCount must be a positive integer",
-      "top must be a positive integer"
+      "top must be a positive integer",
+      "sort must be asc or desc"
     ]);
   });
 

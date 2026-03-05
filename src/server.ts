@@ -187,6 +187,23 @@ function parseBooleanQueryParam(
   return { value: null, error: `${paramName} must be a boolean (true/false/1/0)` };
 }
 
+function parseSortOrderQueryParam(
+  requestUrl: URL,
+  paramName: string
+): { value: "asc" | "desc" | null; error: string | null } {
+  const rawValue = requestUrl.searchParams.get(paramName);
+  if (rawValue === null || rawValue.trim() === "") {
+    return { value: null, error: null };
+  }
+
+  const normalized = rawValue.trim().toLowerCase();
+  if (normalized === "asc" || normalized === "desc") {
+    return { value: normalized, error: null };
+  }
+
+  return { value: null, error: `${paramName} must be asc or desc` };
+}
+
 const OPENAPI_LITE_ENDPOINTS = [
   { method: "GET", path: "/health", summary: "Status do processo" },
   { method: "GET", path: "/healthz", summary: "Alias Kubernetes-friendly para /health" },
@@ -310,11 +327,12 @@ async function route(
     const endpointExact = requestUrl.searchParams.get("endpoint")?.trim() ?? "";
     const minCountParse = parsePositiveIntQueryParam(requestUrl, "minCount");
     const topParse = parsePositiveIntQueryParam(requestUrl, "top");
+    const sortParse = parseSortOrderQueryParam(requestUrl, "sort");
 
-    if (resetParse.error || excludeSelfParse.error || minCountParse.error || topParse.error) {
+    if (resetParse.error || excludeSelfParse.error || minCountParse.error || topParse.error || sortParse.error) {
       sendJson(res, 400, {
         error: "invalid_query_params",
-        details: [resetParse.error, excludeSelfParse.error, minCountParse.error, topParse.error].filter(
+        details: [resetParse.error, excludeSelfParse.error, minCountParse.error, topParse.error, sortParse.error].filter(
           (value): value is string => Boolean(value)
         )
       });
@@ -326,6 +344,7 @@ async function route(
 
     const minCount = minCountParse.value;
     const topLimit = topParse.value;
+    const sortOrder = sortParse.value ?? "desc";
 
     const effectiveRequestsByEndpoint = new Map(requestsByEndpoint);
     if (excludeSelf) {
@@ -347,7 +366,7 @@ async function route(
       : exactRequestsByEndpoint;
 
     const sortedEndpoints = Array.from(filteredRequestsByEndpoint.entries()).sort((a, b) => {
-      const countDelta = b[1] - a[1];
+      const countDelta = sortOrder === "asc" ? a[1] - b[1] : b[1] - a[1];
       if (countDelta !== 0) return countDelta;
       return a[0].localeCompare(b[0]);
     });
@@ -366,7 +385,8 @@ async function route(
       excludeSelfApplied: excludeSelf,
       prefixApplied: endpointPrefix.length > 0 ? endpointPrefix : null,
       endpointApplied: endpointExact.length > 0 ? endpointExact : null,
-      minCountApplied: minCount
+      minCountApplied: minCount,
+      sortApplied: sortOrder
     });
 
     if (resetCounters) {
