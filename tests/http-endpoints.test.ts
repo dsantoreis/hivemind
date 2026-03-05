@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { once } from "node:events";
 import { afterEach, describe, expect, it } from "vitest";
 import { ReliableMultiAgentOrchestrator } from "../src/orchestrator.js";
@@ -13,7 +14,7 @@ afterEach(async () => {
 });
 
 describe("HTTP endpoints", () => {
-  it("expõe /health, /readyz, /metrics, /diag, /build-info e /openapi-lite", async () => {
+  it("expõe /health, /readyz, /metrics, /diag, /build-info, /routes-hash e /openapi-lite", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);
     runningServers.push(app);
@@ -83,6 +84,12 @@ describe("HTTP endpoints", () => {
     expect(Number.isNaN(Date.parse(buildInfoBody.buildTime))).toBe(false);
     expect(buildInfoBody.nodeVersion).toMatch(/^v\d+\.\d+\.\d+/);
 
+    const routesHashRes = await fetch(`${baseUrl}/routes-hash`);
+    expect(routesHashRes.status).toBe(200);
+    const routesHashBody = (await routesHashRes.json()) as { algorithm: string; hash: string };
+    expect(routesHashBody.algorithm).toBe("sha256");
+    expect(routesHashBody.hash).toMatch(/^[0-9a-f]{64}$/i);
+
     const openApiLiteRes = await fetch(`${baseUrl}/openapi-lite`);
     expect(openApiLiteRes.status).toBe(200);
     const openApiLiteBody = (await openApiLiteRes.json()) as {
@@ -96,10 +103,16 @@ describe("HTTP endpoints", () => {
     expect(openApiLiteBody.endpoints).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ method: "GET", path: "/health" }),
+        expect.objectContaining({ method: "GET", path: "/routes-hash" }),
         expect.objectContaining({ method: "GET", path: "/openapi-lite" }),
         expect.objectContaining({ method: "POST", path: "/run" })
       ])
     );
+
+    const expectedRoutesHash = createHash("sha256")
+      .update(openApiLiteBody.endpoints.map(({ method, path }) => `${method} ${path}`).sort().join("\n"))
+      .digest("hex");
+    expect(routesHashBody.hash).toBe(expectedRoutesHash);
   });
 
   it("executa workflow no POST /run e retorna traceId", async () => {

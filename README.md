@@ -81,6 +81,7 @@ Endpoints:
 - `GET /metrics` → snapshot das métricas atuais
 - `GET /diag` → diagnóstico do orchestrator (config/runtime/métricas sem segredos)
 - `GET /build-info` → metadados de build (`version`, `commit`, `buildTime`, `nodeVersion`)
+- `GET /routes-hash` → hash SHA-256 estável da lista de métodos+rotas expostos
 - `GET /openapi-lite` → catálogo resumido de endpoints e métodos HTTP
 - `POST /run` → executa workflow mínimo com payload JSON e retorna `traceId`
 
@@ -93,6 +94,7 @@ curl -s http://localhost:3000/readyz
 curl -s http://localhost:3000/metrics
 curl -s http://localhost:3000/diag
 curl -s http://localhost:3000/build-info
+curl -s http://localhost:3000/routes-hash
 curl -s http://localhost:3000/openapi-lite
 ```
 
@@ -126,7 +128,7 @@ RETRY_ATTEMPTS=3 AGENT_TIMEOUT_MS=500 npm run demo
 |---|---|
 | `./scripts/setup.sh` | Bootstrap local (checks + deps + verify) |
 | `npm run demo` | Executa a demo principal |
-| `npm run serve` | Sobe servidor HTTP com `/health`, `/stats`, `/readyz`, `/metrics`, `/diag`, `/build-info` e `/openapi-lite` |
+| `npm run serve` | Sobe servidor HTTP com `/health`, `/stats`, `/readyz`, `/metrics`, `/diag`, `/build-info`, `/routes-hash` e `/openapi-lite` |
 | `./examples/run-enterprise-demo.sh` | Exemplo executável com env enterprise |
 | `npm run lint` | Validação TypeScript sem gerar artefatos |
 | `npm run test` | Roda toda a suíte de testes |

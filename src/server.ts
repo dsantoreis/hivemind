@@ -1,5 +1,5 @@
 import { createServer as createHttpServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { ReliableMultiAgentOrchestrator } from "./orchestrator.js";
@@ -79,9 +79,14 @@ const OPENAPI_LITE_ENDPOINTS = [
   { method: "GET", path: "/metrics", summary: "Snapshot de métricas" },
   { method: "GET", path: "/diag", summary: "Resumo de diagnóstico sem segredos" },
   { method: "GET", path: "/build-info", summary: "Metadados de build" },
+  { method: "GET", path: "/routes-hash", summary: "Hash SHA-256 estável de métodos+rotas expostos" },
   { method: "GET", path: "/openapi-lite", summary: "Lista resumida dos endpoints HTTP" },
   { method: "POST", path: "/run", summary: "Executa workflow mínimo e retorna traceId" }
 ] as const;
+
+const ROUTES_SIGNATURE_ENTRIES = OPENAPI_LITE_ENDPOINTS.map(({ method, path }) => `${method} ${path}`).sort();
+const ROUTES_SIGNATURE_TEXT = ROUTES_SIGNATURE_ENTRIES.join("\n");
+const ROUTES_SIGNATURE_SHA256 = createHash("sha256").update(ROUTES_SIGNATURE_TEXT).digest("hex");
 
 async function route(
   req: IncomingMessage,
@@ -134,6 +139,14 @@ async function route(
 
   if (req.method === "GET" && req.url === "/build-info") {
     sendJson(res, 200, buildInfo);
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/routes-hash") {
+    sendJson(res, 200, {
+      algorithm: "sha256",
+      hash: ROUTES_SIGNATURE_SHA256
+    });
     return;
   }
 
@@ -228,6 +241,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
   server.listen(port, () => {
     console.log(`HTTP server listening on http://localhost:${port}`);
-    console.log("Endpoints: GET /health | GET /stats | GET /readyz | GET /metrics | GET /diag | GET /build-info | GET /openapi-lite | POST /run");
+    console.log(
+      "Endpoints: GET /health | GET /stats | GET /readyz | GET /metrics | GET /diag | GET /build-info | GET /routes-hash | GET /openapi-lite | POST /run"
+    );
   });
 }
