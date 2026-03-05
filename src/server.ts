@@ -522,13 +522,36 @@ async function route(
   }
 
   if (req.method === "GET" && endpoint === "/openapi-lite") {
+    const methodFilter = requestUrl.searchParams.get("method")?.trim().toUpperCase() ?? "";
+    const pathPrefixFilter = requestUrl.searchParams.get("pathPrefix")?.trim() ?? "";
+
+    if (methodFilter.length > 0 && !["GET", "POST"].includes(methodFilter)) {
+      sendJson(res, 400, {
+        status: "error",
+        message: "invalid_query_param",
+        detail: "method must be GET or POST"
+      });
+      return;
+    }
+
+    const filteredEndpoints = OPENAPI_LITE_ENDPOINTS.filter((item) => {
+      if (methodFilter.length > 0 && item.method !== methodFilter) return false;
+      if (pathPrefixFilter.length > 0 && !item.path.startsWith(pathPrefixFilter)) return false;
+      return true;
+    });
+
     sendJson(res, 200, {
       openapi: "3.1.0-lite",
       info: {
         title: "ai-agent-demo HTTP API",
         version: buildInfo.version
       },
-      endpoints: OPENAPI_LITE_ENDPOINTS
+      filters: {
+        method: methodFilter.length > 0 ? methodFilter : null,
+        pathPrefix: pathPrefixFilter.length > 0 ? pathPrefixFilter : null
+      },
+      endpointCount: filteredEndpoints.length,
+      endpoints: filteredEndpoints
     });
     return;
   }

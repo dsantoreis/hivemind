@@ -459,6 +459,61 @@ describe("HTTP endpoints", () => {
     expect(body.detail).toContain("includeRoutes must be a boolean");
   });
 
+  it("filtra /openapi-lite por método e prefixo de path", async () => {
+    const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
+    const app = createAppServer(orchestrator);
+    runningServers.push(app);
+
+    app.server.listen(0);
+    await once(app.server, "listening");
+
+    const address = app.server.address();
+    if (!address || typeof address === "string") throw new Error("Address inválido");
+
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    const res = await fetch(`${baseUrl}/openapi-lite?method=GET&pathPrefix=/build`);
+    expect(res.status).toBe(200);
+
+    const body = (await res.json()) as {
+      endpointCount: number;
+      filters: { method: string | null; pathPrefix: string | null };
+      endpoints: Array<{ method: string; path: string }>;
+    };
+
+    expect(body.filters.method).toBe("GET");
+    expect(body.filters.pathPrefix).toBe("/build");
+    expect(body.endpointCount).toBe(2);
+    expect(body.endpoints).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ method: "GET", path: "/build-info" }),
+        expect.objectContaining({ method: "GET", path: "/build-lite" })
+      ])
+    );
+  });
+
+  it("valida method em /openapi-lite", async () => {
+    const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
+    const app = createAppServer(orchestrator);
+    runningServers.push(app);
+
+    app.server.listen(0);
+    await once(app.server, "listening");
+
+    const address = app.server.address();
+    if (!address || typeof address === "string") throw new Error("Address inválido");
+
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    const res = await fetch(`${baseUrl}/openapi-lite?method=PUT`);
+    expect(res.status).toBe(400);
+
+    const body = (await res.json()) as { status: string; message: string; detail: string };
+    expect(body.status).toBe("error");
+    expect(body.message).toBe("invalid_query_param");
+    expect(body.detail).toContain("method must be GET or POST");
+  });
+
   it("retorna 415 quando POST /run não recebe content-type JSON", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);
