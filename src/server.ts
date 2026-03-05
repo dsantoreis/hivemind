@@ -230,7 +230,13 @@ async function route(
     return;
   }
 
-  if (req.method === "GET" && endpoint === "/stats") {
+  if ((req.method === "GET" || req.method === "HEAD") && endpoint === "/stats") {
+    if (req.method === "HEAD") {
+      res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
+      res.end();
+      return;
+    }
+
     const resetCounters = requestUrl.searchParams.get("reset") === "1";
     const excludeSelf = requestUrl.searchParams.get("excludeSelf") === "1";
     const endpointPrefix = requestUrl.searchParams.get("prefix")?.trim() ?? "";
