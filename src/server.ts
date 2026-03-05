@@ -61,13 +61,26 @@ async function route(
   res: ServerResponse,
   orchestrator: ReliableMultiAgentOrchestrator,
   startedAt: number,
-  buildInfo: { commitHash: string; buildTime: string }
+  buildInfo: { commitHash: string; buildTime: string },
+  requestsByEndpoint: Map<string, number>
 ) {
+  const endpoint = (req.url ?? "/").split("?")[0] || "/";
+  requestsByEndpoint.set(endpoint, (requestsByEndpoint.get(endpoint) ?? 0) + 1);
+
   if (req.method === "GET" && req.url === "/health") {
     sendJson(res, 200, {
       status: "ok",
       uptimeSec: Math.floor((Date.now() - startedAt) / 1000),
       timestamp: new Date().toISOString()
+    });
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/stats") {
+    sendJson(res, 200, {
+      uptimeSec: Math.floor((Date.now() - startedAt) / 1000),
+      totalRequests: Array.from(requestsByEndpoint.values()).reduce((acc, current) => acc + current, 0),
+      requestsByEndpoint: Object.fromEntries(requestsByEndpoint)
     });
     return;
   }
@@ -146,8 +159,10 @@ export function createAppServer(orchestrator: ReliableMultiAgentOrchestrator): A
     buildTime: resolveBuildTime()
   };
 
+  const requestsByEndpoint = new Map<string, number>();
+
   const server = createHttpServer((req, res) => {
-    route(req, res, orchestrator, startedAt, buildInfo).catch((error) => {
+    route(req, res, orchestrator, startedAt, buildInfo, requestsByEndpoint).catch((error) => {
       sendJson(res, 500, {
         status: "error",
         message: "internal_server_error",
@@ -175,6 +190,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
   server.listen(port, () => {
     console.log(`HTTP server listening on http://localhost:${port}`);
-    console.log("Endpoints: GET /health | GET /readyz | GET /metrics | GET /diag | GET /version | POST /run");
+    console.log("Endpoints: GET /health | GET /stats | GET /readyz | GET /metrics | GET /diag | GET /version | POST /run");
   });
 }

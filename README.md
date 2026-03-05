@@ -18,7 +18,7 @@ Demo comercial de **automação multi-agente confiável** focada em dores reais 
 - **Logs estruturados (JSON)**
 - **Métricas básicas** (counters + duração média/máxima)
 - **Persistência simples** em JSON local
-- **Endpoints HTTP de observabilidade** (`/health`, `/readyz`, `/metrics`, `/diag` e `/version`)
+- **Endpoints HTTP de observabilidade** (`/health`, `/stats`, `/readyz`, `/metrics`, `/diag` e `/version`)
 - **Testes unitários, integração e cenários de falha**
 
 ## Casos de uso comerciais (Upwork-ready)
@@ -76,6 +76,7 @@ npm run serve
 
 Endpoints:
 - `GET /health` → status do processo
+- `GET /stats` → counters agregados de requests por endpoint + uptime
 - `GET /readyz` → prontidão do orchestrator + validação interna de dependências
 - `GET /metrics` → snapshot das métricas atuais
 - `GET /diag` → diagnóstico do orchestrator (config/runtime/métricas sem segredos)
@@ -86,6 +87,7 @@ Validação rápida:
 
 ```bash
 curl -s http://localhost:3000/health
+curl -s http://localhost:3000/stats
 curl -s http://localhost:3000/readyz
 curl -s http://localhost:3000/metrics
 curl -s http://localhost:3000/diag
@@ -122,14 +124,14 @@ RETRY_ATTEMPTS=3 AGENT_TIMEOUT_MS=500 npm run demo
 |---|---|
 | `./scripts/setup.sh` | Bootstrap local (checks + deps + verify) |
 | `npm run demo` | Executa a demo principal |
-| `npm run serve` | Sobe servidor HTTP com `/health`, `/readyz`, `/metrics`, `/diag` e `/version` |
+| `npm run serve` | Sobe servidor HTTP com `/health`, `/stats`, `/readyz`, `/metrics`, `/diag` e `/version` |
 | `./examples/run-enterprise-demo.sh` | Exemplo executável com env enterprise |
 | `npm run lint` | Validação TypeScript sem gerar artefatos |
 | `npm run test` | Roda toda a suíte de testes |
 | `npm run test:unit` | Roda testes unitários da orquestração |
 | `npm run test:smoke` | Roda smoke test da CLI |
 | `npm run test:basic` | Valida o script de exemplo executável |
-| `npm run test:http` | Valida endpoints `/health`, `/readyz`, `/metrics`, `/diag` e `/version` |
+| `npm run test:http` | Valida endpoints HTTP, incluindo `/stats` (counters + uptime) |
 | `npm run verify:quick` | Verificação rápida: lint + unit + smoke + basic + http |
 | `npm run verify:full` | Gate final pré-publicação: lint + unit + smoke + http + build |
 | `npm run build` | Compila o projeto para `dist/` |
@@ -161,11 +163,12 @@ src/
   orchestrator.ts   # coordenador confiável
   config.ts         # env config
   index.ts          # entrypoint demo
-  server.ts         # HTTP endpoints /health, /readyz, /metrics, /diag e /version
+  server.ts         # HTTP endpoints /health, /stats, /readyz, /metrics, /diag e /version
 tests/
   orchestrator.test.ts
   cli.smoke.test.ts
   http-endpoints.test.ts
+  http-stats.test.ts
   failure-scenarios.test.ts
 ```
 

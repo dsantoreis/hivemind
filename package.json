@@ -15,7 +15,7 @@
     "test:unit": "vitest run tests/orchestrator.test.ts",
     "test:smoke": "vitest run tests/cli.smoke.test.ts",
     "test:basic": "vitest run tests/basic-example.test.ts",
-    "test:http": "vitest run tests/http-endpoints.test.ts",
+    "test:http": "vitest run tests/http-endpoints.test.ts tests/http-stats.test.ts",
     "test:watch": "vitest"
   },
   "keywords": [
