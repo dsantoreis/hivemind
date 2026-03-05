@@ -547,7 +547,7 @@ async function route(
     return;
   }
 
-  if (req.method === "GET" && endpoint === "/openapi-lite") {
+  if ((req.method === "GET" || req.method === "HEAD") && endpoint === "/openapi-lite") {
     const methodFilter = requestUrl.searchParams.get("method")?.trim().toUpperCase() ?? "";
     const pathPrefixFilter = requestUrl.searchParams.get("pathPrefix")?.trim() ?? "";
 

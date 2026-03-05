@@ -518,6 +518,28 @@ describe("HTTP endpoints", () => {
     expect(body.detail).toContain("method must be GET or POST");
   });
 
+  it("aceita HEAD em /openapi-lite para probes sem payload", async () => {
+    const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
+    const app = createAppServer(orchestrator);
+    runningServers.push(app);
+
+    app.server.listen(0);
+    await once(app.server, "listening");
+
+    const address = app.server.address();
+    if (!address || typeof address === "string") throw new Error("Address inválido");
+
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    const headRes = await fetch(`${baseUrl}/openapi-lite`, { method: "HEAD" });
+    expect(headRes.status).toBe(200);
+    expect(await headRes.text()).toBe("");
+
+    const statsRes = await fetch(`${baseUrl}/stats`);
+    const statsBody = (await statsRes.json()) as { requestsByEndpoint: Record<string, number> };
+    expect(statsBody.requestsByEndpoint["/openapi-lite"]).toBe(1);
+  });
+
   it("retorna 415 quando POST /run não recebe content-type JSON", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);

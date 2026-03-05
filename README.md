@@ -112,6 +112,7 @@ Endpoints:
 - `GET /build-lite` → build mínimo (`version`, `commit`)
 - `GET /routes-hash` → hash SHA-256 estável da lista de métodos+rotas expostos
 - `GET /openapi-lite` → catálogo resumido de endpoints e métodos HTTP (`?method=GET|POST` e/ou `?pathPrefix=/build` para filtrar)
+- `HEAD /openapi-lite` → probe sem payload para validar disponibilidade do catálogo de endpoints
 - `POST /run` → executa workflow mínimo com payload JSON e retorna `traceId` (retorna `415` se `Content-Type` não for JSON; `400 invalid_payload` inclui `validationErrors`)
 
 Validação rápida:
