@@ -87,6 +87,7 @@ Endpoints:
 - `GET /uptimez` → uptime compacto + timestamp de boot (`startedAtUtc`)
 - `GET /readyz` → prontidão do orchestrator + validação interna de dependências
 - `GET /readyz-lite` → prontidão compacta (`ready` + `uptimeSec`)
+- `HEAD /readyz-lite` → readiness probe sem payload (rápido para balanceador)
 - `GET /statusz` → resumo compacto (`ready`, `uptimeSec`, `version`)
 - `GET /versionz` → versão runtime (`version`, `commit`, `nodeVersion`)
 - `GET /meta-lite` → metadados mínimos (`name`, `version`, `uptimeSec`)

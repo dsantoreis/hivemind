@@ -266,8 +266,15 @@ async function route(
     return;
   }
 
-  if (req.method === "GET" && endpoint === "/readyz-lite") {
+  if ((req.method === "GET" || req.method === "HEAD") && endpoint === "/readyz-lite") {
     const readiness = orchestrator.getReadiness();
+
+    if (req.method === "HEAD") {
+      res.writeHead(readiness.ready ? 200 : 503, { "content-type": "application/json; charset=utf-8" });
+      res.end();
+      return;
+    }
+
     sendJson(res, readiness.ready ? 200 : 503, {
       ready: readiness.ready,
       uptimeSec: Math.floor((Date.now() - startedAt) / 1000)
