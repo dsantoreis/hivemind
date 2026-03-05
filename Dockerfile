@@ -5,6 +5,7 @@ WORKDIR /frontend
 COPY frontend-next/package.json frontend-next/package-lock.json* ./
 RUN npm install || true
 COPY frontend-next .
+RUN mkdir -p public
 RUN npm run build || true
 
 FROM python:3.12-slim AS builder
