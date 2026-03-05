@@ -13,7 +13,7 @@ afterEach(async () => {
 });
 
 describe("HTTP endpoints", () => {
-  it("expõe /health, /readyz, /metrics, /diag e /build-info", async () => {
+  it("expõe /health, /readyz, /metrics, /diag, /build-info e /openapi-lite", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);
     runningServers.push(app);
@@ -82,6 +82,24 @@ describe("HTTP endpoints", () => {
     expect(buildInfoBody.commit).toMatch(/^[0-9a-f]{7,40}$|^unknown$/i);
     expect(Number.isNaN(Date.parse(buildInfoBody.buildTime))).toBe(false);
     expect(buildInfoBody.nodeVersion).toMatch(/^v\d+\.\d+\.\d+/);
+
+    const openApiLiteRes = await fetch(`${baseUrl}/openapi-lite`);
+    expect(openApiLiteRes.status).toBe(200);
+    const openApiLiteBody = (await openApiLiteRes.json()) as {
+      openapi: string;
+      info: { title: string; version: string };
+      endpoints: Array<{ method: string; path: string; summary: string }>;
+    };
+    expect(openApiLiteBody.openapi).toBe("3.1.0-lite");
+    expect(openApiLiteBody.info.title).toBe("ai-agent-demo HTTP API");
+    expect(openApiLiteBody.info.version).toBe(buildInfoBody.version);
+    expect(openApiLiteBody.endpoints).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ method: "GET", path: "/health" }),
+        expect.objectContaining({ method: "GET", path: "/openapi-lite" }),
+        expect.objectContaining({ method: "POST", path: "/run" })
+      ])
+    );
   });
 
   it("executa workflow no POST /run e retorna traceId", async () => {

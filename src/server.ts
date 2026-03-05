@@ -72,6 +72,17 @@ function isTaskInput(payload: unknown): payload is TaskInput {
   return true;
 }
 
+const OPENAPI_LITE_ENDPOINTS = [
+  { method: "GET", path: "/health", summary: "Status do processo" },
+  { method: "GET", path: "/stats", summary: "Requests agregados por endpoint + uptime" },
+  { method: "GET", path: "/readyz", summary: "Prontidão do orchestrator e dependências" },
+  { method: "GET", path: "/metrics", summary: "Snapshot de métricas" },
+  { method: "GET", path: "/diag", summary: "Resumo de diagnóstico sem segredos" },
+  { method: "GET", path: "/build-info", summary: "Metadados de build" },
+  { method: "GET", path: "/openapi-lite", summary: "Lista resumida dos endpoints HTTP" },
+  { method: "POST", path: "/run", summary: "Executa workflow mínimo e retorna traceId" }
+] as const;
+
 async function route(
   req: IncomingMessage,
   res: ServerResponse,
@@ -123,6 +134,18 @@ async function route(
 
   if (req.method === "GET" && req.url === "/build-info") {
     sendJson(res, 200, buildInfo);
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/openapi-lite") {
+    sendJson(res, 200, {
+      openapi: "3.1.0-lite",
+      info: {
+        title: "ai-agent-demo HTTP API",
+        version: buildInfo.version
+      },
+      endpoints: OPENAPI_LITE_ENDPOINTS
+    });
     return;
   }
 
@@ -205,6 +228,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
   server.listen(port, () => {
     console.log(`HTTP server listening on http://localhost:${port}`);
-    console.log("Endpoints: GET /health | GET /stats | GET /readyz | GET /metrics | GET /diag | GET /build-info | POST /run");
+    console.log("Endpoints: GET /health | GET /stats | GET /readyz | GET /metrics | GET /diag | GET /build-info | GET /openapi-lite | POST /run");
   });
 }
