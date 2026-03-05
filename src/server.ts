@@ -78,16 +78,31 @@ async function readJsonBody(req: IncomingMessage): Promise<unknown> {
   }
 }
 
-function isTaskInput(payload: unknown): payload is TaskInput {
-  if (!payload || typeof payload !== "object") return false;
+function validateTaskInput(payload: unknown): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+
+  if (!payload || typeof payload !== "object") {
+    return { valid: false, errors: ["payload must be a JSON object"] };
+  }
 
   const candidate = payload as Partial<TaskInput>;
-  if (typeof candidate.goal !== "string" || candidate.goal.trim().length === 0) return false;
 
-  if (candidate.id !== undefined && typeof candidate.id !== "string") return false;
-  if (candidate.context !== undefined && (typeof candidate.context !== "object" || candidate.context === null)) return false;
+  if (typeof candidate.goal !== "string" || candidate.goal.trim().length === 0) {
+    errors.push("goal must be a non-empty string");
+  }
 
-  return true;
+  if (candidate.id !== undefined && typeof candidate.id !== "string") {
+    errors.push("id must be a string when provided");
+  }
+
+  if (candidate.context !== undefined && (typeof candidate.context !== "object" || candidate.context === null)) {
+    errors.push("context must be an object when provided");
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors
+  };
 }
 
 const OPENAPI_LITE_ENDPOINTS = [
@@ -302,16 +317,18 @@ async function route(
 
     try {
       const payload = await readJsonBody(req);
-      if (!isTaskInput(payload)) {
+      const validation = validateTaskInput(payload);
+      if (!validation.valid) {
         sendJson(res, 400, {
           status: "error",
           message: "invalid_payload",
+          validationErrors: validation.errors,
           traceId
         });
         return;
       }
 
-      const result = await orchestrator.run(payload);
+      const result = await orchestrator.run(payload as TaskInput);
       sendJson(res, 200, {
         traceId,
         result
