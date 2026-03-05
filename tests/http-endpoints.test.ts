@@ -636,6 +636,44 @@ describe("HTTP endpoints", () => {
     expect(body.validationErrors).toContain("context must be a non-array object when provided");
   });
 
+  it("rejeita valores não-string dentro de context no POST /run", async () => {
+    const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
+    const app = createAppServer(orchestrator);
+    runningServers.push(app);
+
+    app.server.listen(0);
+    await once(app.server, "listening");
+
+    const address = app.server.address();
+    if (!address || typeof address === "string") throw new Error("Address inválido");
+
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    const runRes = await fetch(`${baseUrl}/run`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        goal: "Contexto precisa ser estritamente string",
+        context: {
+          origin: "integration-test",
+          retries: 3
+        }
+      })
+    });
+
+    expect(runRes.status).toBe(400);
+
+    const body = (await runRes.json()) as {
+      status: string;
+      message: string;
+      validationErrors: string[];
+    };
+
+    expect(body.status).toBe("error");
+    expect(body.message).toBe("invalid_payload");
+    expect(body.validationErrors).toContain("context.retries must be a string");
+  });
+
   it("executa workflow no POST /run e retorna traceId", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);

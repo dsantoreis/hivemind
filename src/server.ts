@@ -127,6 +127,18 @@ function validateTaskInput(payload: unknown): { valid: boolean; errors: string[]
     errors.push("context must be a non-array object when provided");
   }
 
+  if (candidate.context && typeof candidate.context === "object" && !Array.isArray(candidate.context)) {
+    for (const [key, value] of Object.entries(candidate.context)) {
+      if (key.trim().length === 0) {
+        errors.push("context keys must be non-empty strings");
+      }
+
+      if (typeof value !== "string") {
+        errors.push(`context.${key || "<empty>"} must be a string`);
+      }
+    }
+  }
+
   return {
     valid: errors.length === 0,
     errors
