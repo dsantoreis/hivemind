@@ -470,7 +470,13 @@ async function route(
     return;
   }
 
-  if (req.method === "GET" && endpoint === "/versionz") {
+  if ((req.method === "GET" || req.method === "HEAD") && endpoint === "/versionz") {
+    if (req.method === "HEAD") {
+      res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
+      res.end();
+      return;
+    }
+
     sendJson(res, 200, {
       version: buildInfo.version,
       commit: buildInfo.commit,
@@ -513,7 +519,13 @@ async function route(
     return;
   }
 
-  if (req.method === "GET" && endpoint === "/build-lite") {
+  if ((req.method === "GET" || req.method === "HEAD") && endpoint === "/build-lite") {
+    if (req.method === "HEAD") {
+      res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
+      res.end();
+      return;
+    }
+
     sendJson(res, 200, {
       version: buildInfo.version,
       commit: buildInfo.commit
