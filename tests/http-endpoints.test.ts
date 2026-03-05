@@ -481,12 +481,13 @@ describe("HTTP endpoints", () => {
 
     const body = (await res.json()) as {
       endpointCount: number;
-      filters: { method: string | null; pathPrefix: string | null };
+      filters: { method: string | null; pathPrefix: string | null; sort: "asc" | "desc" | null };
       endpoints: Array<{ method: string; path: string }>;
     };
 
     expect(body.filters.method).toBe("GET");
     expect(body.filters.pathPrefix).toBe("/build");
+    expect(body.filters.sort).toBeNull();
     expect(body.endpointCount).toBe(2);
     expect(body.endpoints).toEqual(
       expect.arrayContaining([
@@ -496,7 +497,7 @@ describe("HTTP endpoints", () => {
     );
   });
 
-  it("valida method em /openapi-lite", async () => {
+  it("ordena /openapi-lite por método/path quando sort=asc", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);
     runningServers.push(app);
@@ -509,13 +510,49 @@ describe("HTTP endpoints", () => {
 
     const baseUrl = `http://127.0.0.1:${address.port}`;
 
-    const res = await fetch(`${baseUrl}/openapi-lite?method=PUT`);
-    expect(res.status).toBe(400);
+    const res = await fetch(`${baseUrl}/openapi-lite?method=GET&pathPrefix=/b&sort=asc`);
+    expect(res.status).toBe(200);
 
-    const body = (await res.json()) as { status: string; message: string; detail: string };
-    expect(body.status).toBe("error");
-    expect(body.message).toBe("invalid_query_param");
-    expect(body.detail).toContain("method must be GET or POST");
+    const body = (await res.json()) as {
+      filters: { sort: "asc" | "desc" | null };
+      endpoints: Array<{ method: string; path: string }>;
+    };
+
+    expect(body.filters.sort).toBe("asc");
+    expect(body.endpoints).toEqual([
+      expect.objectContaining({ method: "GET", path: "/build-info" }),
+      expect.objectContaining({ method: "GET", path: "/build-lite" })
+    ]);
+  });
+
+  it("valida method e sort em /openapi-lite", async () => {
+    const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
+    const app = createAppServer(orchestrator);
+    runningServers.push(app);
+
+    app.server.listen(0);
+    await once(app.server, "listening");
+
+    const address = app.server.address();
+    if (!address || typeof address === "string") throw new Error("Address inválido");
+
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    const methodRes = await fetch(`${baseUrl}/openapi-lite?method=PUT`);
+    expect(methodRes.status).toBe(400);
+
+    const methodBody = (await methodRes.json()) as { status: string; message: string; detail: string };
+    expect(methodBody.status).toBe("error");
+    expect(methodBody.message).toBe("invalid_query_param");
+    expect(methodBody.detail).toContain("method must be GET or POST");
+
+    const sortRes = await fetch(`${baseUrl}/openapi-lite?sort=random`);
+    expect(sortRes.status).toBe(400);
+
+    const sortBody = (await sortRes.json()) as { status: string; message: string; detail: string };
+    expect(sortBody.status).toBe("error");
+    expect(sortBody.message).toBe("invalid_query_param");
+    expect(sortBody.detail).toContain("sort must be asc or desc");
   });
 
   it("aceita HEAD em /openapi-lite para probes sem payload", async () => {

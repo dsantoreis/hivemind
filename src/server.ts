@@ -550,6 +550,7 @@ async function route(
   if ((req.method === "GET" || req.method === "HEAD") && endpoint === "/openapi-lite") {
     const methodFilter = requestUrl.searchParams.get("method")?.trim().toUpperCase() ?? "";
     const pathPrefixFilter = requestUrl.searchParams.get("pathPrefix")?.trim() ?? "";
+    const sortParse = parseSortOrderQueryParam(requestUrl, "sort");
 
     if (methodFilter.length > 0 && !["GET", "POST"].includes(methodFilter)) {
       sendJson(res, 400, {
@@ -560,11 +561,34 @@ async function route(
       return;
     }
 
+    if (sortParse.error) {
+      sendJson(res, 400, {
+        status: "error",
+        message: "invalid_query_param",
+        detail: sortParse.error
+      });
+      return;
+    }
+
     const filteredEndpoints = OPENAPI_LITE_ENDPOINTS.filter((item) => {
       if (methodFilter.length > 0 && item.method !== methodFilter) return false;
       if (pathPrefixFilter.length > 0 && !item.path.startsWith(pathPrefixFilter)) return false;
       return true;
     });
+
+    const sortOrder = sortParse.value;
+    const endpoints = sortOrder
+      ? [...filteredEndpoints].sort((a, b) => {
+        const methodComparison = a.method.localeCompare(b.method);
+        const pathComparison = a.path.localeCompare(b.path);
+        if (sortOrder === "asc") {
+          if (methodComparison !== 0) return methodComparison;
+          return pathComparison;
+        }
+        if (methodComparison !== 0) return -methodComparison;
+        return -pathComparison;
+      })
+      : filteredEndpoints;
 
     sendJson(res, 200, {
       openapi: "3.1.0-lite",
@@ -574,10 +598,11 @@ async function route(
       },
       filters: {
         method: methodFilter.length > 0 ? methodFilter : null,
-        pathPrefix: pathPrefixFilter.length > 0 ? pathPrefixFilter : null
+        pathPrefix: pathPrefixFilter.length > 0 ? pathPrefixFilter : null,
+        sort: sortOrder
       },
-      endpointCount: filteredEndpoints.length,
-      endpoints: filteredEndpoints
+      endpointCount: endpoints.length,
+      endpoints
     });
     return;
   }
