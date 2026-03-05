@@ -18,7 +18,7 @@ Demo comercial de **automação multi-agente confiável** focada em dores reais 
 - **Logs estruturados (JSON)**
 - **Métricas básicas** (counters + duração média/máxima)
 - **Persistência simples** em JSON local
-- **Endpoints HTTP de observabilidade** (`/health`, `/healthz-lite`, `/pingz`, `/stats`, `/timez`, `/readyz`, `/readyz-lite`, `/statusz`, `/metrics`, `/diag`, `/build-info` e `/openapi-lite`)
+- **Endpoints HTTP de observabilidade** (`/health`, `/healthz-lite`, `/pingz`, `/stats`, `/timez`, `/readyz`, `/readyz-lite`, `/statusz`, `/meta-lite`, `/metrics`, `/diag`, `/build-info` e `/openapi-lite`)
 - **Testes unitários, integração e cenários de falha**
 
 ## Casos de uso comerciais (Upwork-ready)
@@ -83,6 +83,7 @@ Endpoints:
 - `GET /readyz` → prontidão do orchestrator + validação interna de dependências
 - `GET /readyz-lite` → prontidão compacta (`ready` + `uptimeSec`)
 - `GET /statusz` → resumo compacto (`ready`, `uptimeSec`, `version`)
+- `GET /meta-lite` → metadados mínimos (`name`, `version`, `uptimeSec`)
 - `GET /metrics` → snapshot das métricas atuais
 - `GET /diag` → diagnóstico do orchestrator (config/runtime/métricas sem segredos)
 - `GET /build-info` → metadados de build (`version`, `commit`, `buildTime`, `nodeVersion`)
@@ -101,6 +102,7 @@ curl -s http://localhost:3000/timez
 curl -s http://localhost:3000/readyz
 curl -s http://localhost:3000/readyz-lite
 curl -s http://localhost:3000/statusz
+curl -s http://localhost:3000/meta-lite
 curl -s http://localhost:3000/metrics
 curl -s http://localhost:3000/diag
 curl -s http://localhost:3000/build-info
@@ -138,7 +140,7 @@ RETRY_ATTEMPTS=3 AGENT_TIMEOUT_MS=500 npm run demo
 |---|---|
 | `./scripts/setup.sh` | Bootstrap local (checks + deps + verify) |
 | `npm run demo` | Executa a demo principal |
-| `npm run serve` | Sobe servidor HTTP com `/health`, `/healthz-lite`, `/pingz`, `/stats`, `/timez`, `/readyz`, `/readyz-lite`, `/statusz`, `/metrics`, `/diag`, `/build-info`, `/routes-hash` e `/openapi-lite` |
+| `npm run serve` | Sobe servidor HTTP com `/health`, `/healthz-lite`, `/pingz`, `/stats`, `/timez`, `/readyz`, `/readyz-lite`, `/statusz`, `/meta-lite`, `/metrics`, `/diag`, `/build-info`, `/routes-hash` e `/openapi-lite` |
 | `./examples/run-enterprise-demo.sh` | Exemplo executável com env enterprise |
 | `npm run lint` | Validação TypeScript sem gerar artefatos |
 | `npm run test` | Roda toda a suíte de testes |
@@ -177,7 +179,7 @@ src/
   orchestrator.ts   # coordenador confiável
   config.ts         # env config
   index.ts          # entrypoint demo
-  server.ts         # HTTP endpoints /health, /healthz-lite, /pingz, /stats, /timez, /readyz, /readyz-lite, /statusz, /metrics, /diag, /build-info e /openapi-lite
+  server.ts         # HTTP endpoints /health, /healthz-lite, /pingz, /stats, /timez, /readyz, /readyz-lite, /statusz, /meta-lite, /metrics, /diag, /build-info e /openapi-lite
 tests/
   orchestrator.test.ts
   cli.smoke.test.ts

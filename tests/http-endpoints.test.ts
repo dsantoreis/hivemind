@@ -14,7 +14,7 @@ afterEach(async () => {
 });
 
 describe("HTTP endpoints", () => {
-  it("expõe /health, /healthz-lite, /pingz, /timez, /readyz, /readyz-lite, /statusz, /metrics, /diag, /build-info, /routes-hash e /openapi-lite", async () => {
+  it("expõe /health, /healthz-lite, /pingz, /timez, /readyz, /readyz-lite, /statusz, /meta-lite, /metrics, /diag, /build-info, /routes-hash e /openapi-lite", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);
     runningServers.push(app);
@@ -82,6 +82,14 @@ describe("HTTP endpoints", () => {
     expect(statuszBody.uptimeSec).toBeGreaterThanOrEqual(0);
     expect(statuszBody.version).toMatch(/^\d+\.\d+\.\d+(-.+)?$|^unknown$/);
 
+    const metaLiteRes = await fetch(`${baseUrl}/meta-lite`);
+    expect(metaLiteRes.status).toBe(200);
+    const metaLiteBody = (await metaLiteRes.json()) as { name: string; version: string; uptimeSec: number };
+    expect(metaLiteBody.name).toBe("ai-agent-demo");
+    expect(metaLiteBody.version).toBe(statuszBody.version);
+    expect(typeof metaLiteBody.uptimeSec).toBe("number");
+    expect(metaLiteBody.uptimeSec).toBeGreaterThanOrEqual(0);
+
     const metricsRes = await fetch(`${baseUrl}/metrics`);
     expect(metricsRes.status).toBe(200);
     const metricsBody = (await metricsRes.json()) as { counters: Record<string, number>; durations: Record<string, unknown> };
@@ -146,6 +154,7 @@ describe("HTTP endpoints", () => {
         expect.objectContaining({ method: "GET", path: "/timez" }),
         expect.objectContaining({ method: "GET", path: "/readyz-lite" }),
         expect.objectContaining({ method: "GET", path: "/statusz" }),
+        expect.objectContaining({ method: "GET", path: "/meta-lite" }),
         expect.objectContaining({ method: "GET", path: "/routes-hash" }),
         expect.objectContaining({ method: "GET", path: "/openapi-lite" }),
         expect.objectContaining({ method: "POST", path: "/run" })
