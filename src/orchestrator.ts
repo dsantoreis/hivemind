@@ -1,33 +1,26 @@
-import { coder, planner, researcher, reviewer } from "./agents.js";
+import { workerBuild, workerResearch } from "./agents.js";
 import type { Task, WorkflowResult } from "./types.js";
 
 export class MultiAgentOrchestrator {
+  private readonly coordinatorName = "coordinator";
+
   async run(task: Task): Promise<WorkflowResult> {
-    const steps = [];
-
-    const plan = await planner(task);
-    steps.push(plan);
-
-    const research = await researcher(task, plan.output);
-    steps.push(research);
-
-    const implementation = await coder(task, research.output);
-    steps.push(implementation);
-
-    const review = await reviewer(task, implementation.output);
-    steps.push(review);
+    const [research, build] = await Promise.all([
+      workerResearch(task),
+      workerBuild(task)
+    ]);
 
     const finalAnswer = [
-      `Objetivo: ${task.goal}`,
-      `Plano: ${plan.output}`,
-      `Pesquisa: ${research.output}`,
-      `Código: ${implementation.output}`,
-      `Revisão: ${review.output}`
+      `${this.coordinatorName}: objetivo recebido -> ${task.goal}`,
+      `${research.agent}: ${research.output}`,
+      `${build.agent}: ${build.output}`,
+      `${this.coordinatorName}: decisão -> executar MVP com observabilidade simples.`
     ].join("\n");
 
     return {
       taskId: task.id,
-      steps,
+      coordinator: this.coordinatorName,
+      steps: [research, build],
       finalAnswer
     };
   }

@@ -1,4 +1,4 @@
-export type AgentName = "planner" | "researcher" | "coder" | "reviewer";
+export type AgentName = "worker-research" | "worker-build";
 
 export interface Task {
   id: string;
@@ -12,6 +12,7 @@ export interface AgentResult {
 
 export interface WorkflowResult {
   taskId: string;
+  coordinator: string;
   steps: AgentResult[];
   finalAnswer: string;
 }

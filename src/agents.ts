@@ -4,34 +4,18 @@ function withLatency(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export async function planner(task: Task): Promise<AgentResult> {
-  await withLatency(40);
-  return {
-    agent: "planner",
-    output: `Plano para '${task.goal}': pesquisar contexto, implementar solução mínima, revisar riscos.`
-  };
-}
-
-export async function researcher(task: Task, plan: string): Promise<AgentResult> {
-  await withLatency(30);
-  return {
-    agent: "researcher",
-    output: `Pesquisa rápida para '${task.goal}': requisitos inferidos + restrições técnicas. Baseado em: ${plan}`
-  };
-}
-
-export async function coder(task: Task, context: string): Promise<AgentResult> {
+export async function workerResearch(task: Task): Promise<AgentResult> {
   await withLatency(25);
   return {
-    agent: "coder",
-    output: `Implementação proposta para '${task.goal}': módulo TypeScript com fluxo determinístico. Contexto: ${context}`
+    agent: "worker-research",
+    output: `Contexto para '${task.goal}': requisitos mínimos, restrições de prazo e trade-offs.`
   };
 }
 
-export async function reviewer(task: Task, implementation: string): Promise<AgentResult> {
+export async function workerBuild(task: Task): Promise<AgentResult> {
   await withLatency(20);
   return {
-    agent: "reviewer",
-    output: `Revisão para '${task.goal}': sem bloqueios críticos. Melhorias futuras: métricas e retries. Revisado: ${implementation}`
+    agent: "worker-build",
+    output: `Plano de implementação para '${task.goal}': estrutura TS, fluxo previsível e testes básicos.`
   };
 }

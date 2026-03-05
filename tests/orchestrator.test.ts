@@ -2,21 +2,21 @@ import { describe, expect, it } from "vitest";
 import { MultiAgentOrchestrator } from "../src/orchestrator.js";
 
 describe("MultiAgentOrchestrator", () => {
-  it("executa pipeline completo na ordem esperada", async () => {
+  it("coordena 2 workers e retorna resposta consolidada", async () => {
     const orchestrator = new MultiAgentOrchestrator();
 
     const result = await orchestrator.run({
       id: "t-1",
-      goal: "Gerar plano para atendimento"
+      goal: "Montar pipeline de suporte"
     });
 
     expect(result.taskId).toBe("t-1");
-    expect(result.steps.map((s) => s.agent)).toEqual([
-      "planner",
-      "researcher",
-      "coder",
-      "reviewer"
+    expect(result.coordinator).toBe("coordinator");
+    expect(result.steps).toHaveLength(2);
+    expect(result.steps.map((s) => s.agent).sort()).toEqual([
+      "worker-build",
+      "worker-research"
     ]);
-    expect(result.finalAnswer).toContain("Objetivo: Gerar plano para atendimento");
+    expect(result.finalAnswer).toContain("coordinator: objetivo recebido");
   });
 });
