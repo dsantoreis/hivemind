@@ -35,7 +35,15 @@ Demo comercial de **automação multi-agente confiável** focada em dores reais 
 - Node.js 20+
 - npm 10+
 
-## Instalação
+## Setup rápido (enterprise-friendly)
+
+```bash
+./scripts/setup.sh
+```
+
+Esse script valida versão do Node, instala deps com `npm ci` e roda `verify:quick`.
+
+## Instalação manual
 
 ```bash
 npm install
@@ -58,16 +66,37 @@ npm install
 npm run demo
 ```
 
-### Exemplo de execução
+### Exemplo de execução (com script pronto)
+
+```bash
+./examples/run-enterprise-demo.sh
+```
+
+### Exemplo de execução manual
 
 ```bash
 RETRY_ATTEMPTS=3 AGENT_TIMEOUT_MS=500 npm run demo
 ```
 
+## Comandos
+
+| Comando | O que faz |
+|---|---|
+| `./scripts/setup.sh` | Bootstrap local (checks + deps + verify) |
+| `npm run demo` | Executa a demo principal |
+| `./examples/run-enterprise-demo.sh` | Exemplo executável com env enterprise |
+| `npm run lint` | Validação TypeScript sem gerar artefatos |
+| `npm run test` | Roda toda a suíte de testes |
+| `npm run test:unit` | Roda testes unitários da orquestração |
+| `npm run test:smoke` | Roda smoke test da CLI |
+| `npm run test:basic` | Valida o script de exemplo executável |
+| `npm run verify:quick` | Verificação rápida: lint + unit + smoke + basic |
+| `npm run build` | Compila o projeto para `dist/` |
+
 ## Testes e build
 
 ```bash
-npm test
+npm run verify:quick
 npm run build
 ```
 
