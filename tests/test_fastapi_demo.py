@@ -16,3 +16,11 @@ def test_run() -> None:
     body = r.json()
     assert 'Plan:' in body['plan']
     assert 'Recommended approach' in body['result']
+
+
+def test_run_rejects_too_short_task() -> None:
+    client = TestClient(app)
+    r = client.post('/run', json={'task': 'hi'})
+    assert r.status_code == 422
+    body = r.json()
+    assert body['detail'][0]['type'] == 'string_too_short'
