@@ -232,10 +232,18 @@ async function route(
 
   if (req.method === "GET" && endpoint === "/stats") {
     const resetCounters = requestUrl.searchParams.get("reset") === "1";
+    const excludeSelf = requestUrl.searchParams.get("excludeSelf") === "1";
     const topRaw = requestUrl.searchParams.get("top");
     const topLimit = topRaw ? Number(topRaw) : Number.NaN;
 
-    const sortedEndpoints = Array.from(requestsByEndpoint.entries()).sort((a, b) => {
+    const effectiveRequestsByEndpoint = new Map(requestsByEndpoint);
+    if (excludeSelf) {
+      const currentStatsCount = (effectiveRequestsByEndpoint.get("/stats") ?? 0) - 1;
+      if (currentStatsCount > 0) effectiveRequestsByEndpoint.set("/stats", currentStatsCount);
+      else effectiveRequestsByEndpoint.delete("/stats");
+    }
+
+    const sortedEndpoints = Array.from(effectiveRequestsByEndpoint.entries()).sort((a, b) => {
       const countDelta = b[1] - a[1];
       if (countDelta !== 0) return countDelta;
       return a[0].localeCompare(b[0]);
@@ -246,10 +254,11 @@ async function route(
 
     sendJson(res, 200, {
       uptimeSec: Math.floor((Date.now() - startedAt) / 1000),
-      totalRequests: Array.from(requestsByEndpoint.values()).reduce((acc, current) => acc + current, 0),
-      requestsByEndpoint: Object.fromEntries(requestsByEndpoint),
+      totalRequests: Array.from(effectiveRequestsByEndpoint.values()).reduce((acc, current) => acc + current, 0),
+      requestsByEndpoint: Object.fromEntries(effectiveRequestsByEndpoint),
       topEndpoints,
-      resetApplied: resetCounters
+      resetApplied: resetCounters,
+      excludeSelfApplied: excludeSelf
     });
 
     if (resetCounters) {

@@ -112,6 +112,37 @@ describe("HTTP /stats", () => {
     ]);
   });
 
+  it("permite excluir o próprio /stats com ?excludeSelf=1", async () => {
+    const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
+    const app = createAppServer(orchestrator);
+    runningServers.push(app);
+
+    app.server.listen(0);
+    await once(app.server, "listening");
+
+    const address = app.server.address();
+    if (!address || typeof address === "string") throw new Error("Address inválido");
+
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    await fetch(`${baseUrl}/health`);
+    await fetch(`${baseUrl}/health`);
+
+    const statsRes = await fetch(`${baseUrl}/stats?excludeSelf=1`);
+    expect(statsRes.status).toBe(200);
+
+    const statsBody = (await statsRes.json()) as {
+      totalRequests: number;
+      requestsByEndpoint: Record<string, number>;
+      excludeSelfApplied: boolean;
+    };
+
+    expect(statsBody.excludeSelfApplied).toBe(true);
+    expect(statsBody.totalRequests).toBe(2);
+    expect(statsBody.requestsByEndpoint["/health"]).toBe(2);
+    expect(statsBody.requestsByEndpoint["/stats"]).toBeUndefined();
+  });
+
   it("reseta contadores quando chamado com ?reset=1", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);
