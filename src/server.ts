@@ -54,6 +54,13 @@ class InvalidJsonBodyError extends Error {
   }
 }
 
+class PayloadTooLargeError extends Error {
+  constructor() {
+    super("payload_too_large");
+    this.name = "PayloadTooLargeError";
+  }
+}
+
 function isJsonContentType(contentTypeHeader: string | string[] | undefined): boolean {
   if (!contentTypeHeader) return false;
   const value = Array.isArray(contentTypeHeader) ? contentTypeHeader.join(",") : contentTypeHeader;
@@ -61,11 +68,29 @@ function isJsonContentType(contentTypeHeader: string | string[] | undefined): bo
   return normalized.includes("application/json") || normalized.includes("+json");
 }
 
-async function readJsonBody(req: IncomingMessage): Promise<unknown> {
+function resolveRunBodyMaxBytes(): number {
+  const raw = process.env.RUN_BODY_MAX_BYTES?.trim();
+  if (!raw) return 1_000_000;
+
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed <= 0) return 1_000_000;
+
+  return Math.floor(parsed);
+}
+
+async function readJsonBody(req: IncomingMessage, maxBytes: number): Promise<unknown> {
   const chunks: Buffer[] = [];
+  let totalBytes = 0;
 
   for await (const chunk of req) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    totalBytes += buffer.length;
+
+    if (totalBytes > maxBytes) {
+      throw new PayloadTooLargeError();
+    }
+
+    chunks.push(buffer);
   }
 
   const rawBody = Buffer.concat(chunks).toString("utf-8").trim();
@@ -141,7 +166,8 @@ async function route(
   orchestrator: ReliableMultiAgentOrchestrator,
   startedAt: number,
   buildInfo: { version: string; commit: string; buildTime: string; nodeVersion: string },
-  requestsByEndpoint: Map<string, number>
+  requestsByEndpoint: Map<string, number>,
+  runBodyMaxBytes: number
 ) {
   const endpoint = (req.url ?? "/").split("?")[0] || "/";
   const startedAtNs = process.hrtime.bigint();
@@ -325,7 +351,7 @@ async function route(
     }
 
     try {
-      const payload = await readJsonBody(req);
+      const payload = await readJsonBody(req, runBodyMaxBytes);
       const validation = validateTaskInput(payload);
       if (!validation.valid) {
         sendJson(res, 400, {
@@ -348,6 +374,16 @@ async function route(
         sendJson(res, 400, {
           status: "error",
           message: "invalid_json_body",
+          traceId
+        });
+        return;
+      }
+
+      if (error instanceof PayloadTooLargeError) {
+        sendJson(res, 413, {
+          status: "error",
+          message: "payload_too_large",
+          maxBytes: runBodyMaxBytes,
           traceId
         });
         return;
@@ -381,9 +417,10 @@ export function createAppServer(orchestrator: ReliableMultiAgentOrchestrator): A
   };
 
   const requestsByEndpoint = new Map<string, number>();
+  const runBodyMaxBytes = resolveRunBodyMaxBytes();
 
   const server = createHttpServer((req, res) => {
-    route(req, res, orchestrator, startedAt, buildInfo, requestsByEndpoint).catch((error) => {
+    route(req, res, orchestrator, startedAt, buildInfo, requestsByEndpoint, runBodyMaxBytes).catch((error) => {
       sendJson(res, 500, {
         status: "error",
         message: "internal_server_error",

@@ -60,6 +60,7 @@ npm install
 | `QUEUE_CONCURRENCY` | `2` | Reservado para expansão de workers concorrentes |
 | `STATE_FILE` | `.data/orchestrator-state.json` | Persistência do estado |
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
+| `RUN_BODY_MAX_BYTES` | `1000000` | Limite máximo do payload JSON no `POST /run` (retorna `413 payload_too_large` quando excede) |
 
 ## Executar demo
 

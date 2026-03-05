@@ -313,6 +313,43 @@ describe("HTTP endpoints", () => {
     );
   });
 
+  it("retorna 413 quando POST /run excede limite de payload", async () => {
+    const previousLimit = process.env.RUN_BODY_MAX_BYTES;
+    process.env.RUN_BODY_MAX_BYTES = "64";
+
+    try {
+      const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
+      const app = createAppServer(orchestrator);
+      runningServers.push(app);
+
+      app.server.listen(0);
+      await once(app.server, "listening");
+
+      const address = app.server.address();
+      if (!address || typeof address === "string") throw new Error("Address inválido");
+
+      const baseUrl = `http://127.0.0.1:${address.port}`;
+
+      const runRes = await fetch(`${baseUrl}/run`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ goal: "x".repeat(512) })
+      });
+
+      expect(runRes.status).toBe(413);
+
+      const body = (await runRes.json()) as { status: string; message: string; maxBytes: number; traceId: string };
+      expect(body.status).toBe("error");
+      expect(body.message).toBe("payload_too_large");
+      expect(body.maxBytes).toBe(64);
+      expect(body.traceId).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+      );
+    } finally {
+      if (previousLimit === undefined) delete process.env.RUN_BODY_MAX_BYTES;
+      else process.env.RUN_BODY_MAX_BYTES = previousLimit;
+    }
+  });
 
   it("retorna erros de validação detalhados para payload JSON inválido", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
