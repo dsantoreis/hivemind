@@ -94,6 +94,7 @@ Endpoints:
 - `HEAD /health` → liveness probe sem payload (health-check rápido)
 - `GET /alivez` → status simples de vida (`status: alive`)
 - `GET /healthz-lite` → health mínimo (`status` + `uptimeSec`)
+- `HEAD /healthz-lite` → liveness probe sem payload (rápido para balanceadores)
 - `GET /echoz` → echo mínimo (`status` + `service`)
 - `GET /pingz` → latência local do request (`localLatencyMs`) + `timestamp`
 - `GET /stats` → counters agregados de requests por endpoint + uptime (`?reset=1` reseta contadores após responder; `?top=N` retorna ranking dos N endpoints mais acessados; `?minCount=N` mantém apenas endpoints com contagem mínima N)
@@ -102,7 +103,7 @@ Endpoints:
 - `GET /readyz` → prontidão do orchestrator + validação interna de dependências
 - `GET /readyz-lite` → prontidão compacta (`ready` + `uptimeSec`)
 - `HEAD /readyz-lite` → readiness probe sem payload (rápido para balanceador)
-- `GET /statusz` → resumo compacto (`ready`, `uptimeSec`, `version`)
+- `GET /statusz` → resumo compacto (`ready`, `uptimeSec`, `version`); com `?verbose=true` inclui `status`, `timestamp`, `dependencyCount` e `unhealthyDependencies` (se `verbose` inválido retorna `400 invalid_query_param`)
 - `GET /versionz` → versão runtime (`version`, `commit`, `nodeVersion`)
 - `GET /meta-lite` → metadados mínimos (`name`, `version`, `uptimeSec`)
 - `GET /metrics` → snapshot das métricas atuais

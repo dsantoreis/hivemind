@@ -154,6 +154,27 @@ function parsePositiveIntQueryParam(
   return { value: parsed, error: null };
 }
 
+function parseBooleanQueryParam(
+  requestUrl: URL,
+  paramName: string
+): { value: boolean | null; error: string | null } {
+  const rawValue = requestUrl.searchParams.get(paramName);
+  if (rawValue === null || rawValue.trim() === "") {
+    return { value: null, error: null };
+  }
+
+  const normalized = rawValue.trim().toLowerCase();
+  if (["1", "true", "yes", "on"].includes(normalized)) {
+    return { value: true, error: null };
+  }
+
+  if (["0", "false", "no", "off"].includes(normalized)) {
+    return { value: false, error: null };
+  }
+
+  return { value: null, error: `${paramName} must be a boolean (true/false/1/0)` };
+}
+
 const OPENAPI_LITE_ENDPOINTS = [
   { method: "GET", path: "/health", summary: "Status do processo" },
   { method: "GET", path: "/healthz", summary: "Alias Kubernetes-friendly para /health" },
@@ -226,7 +247,13 @@ async function route(
     return;
   }
 
-  if (req.method === "GET" && endpoint === "/healthz-lite") {
+  if ((req.method === "GET" || req.method === "HEAD") && endpoint === "/healthz-lite") {
+    if (req.method === "HEAD") {
+      res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
+      res.end();
+      return;
+    }
+
     sendJson(res, 200, {
       status: "ok",
       uptimeSec: Math.floor((Date.now() - startedAt) / 1000)
@@ -361,6 +388,12 @@ async function route(
   }
 
   if ((req.method === "GET" || req.method === "HEAD") && endpoint === "/statusz") {
+    const verboseParam = parseBooleanQueryParam(requestUrl, "verbose");
+    if (verboseParam.error) {
+      sendJson(res, 400, { status: "error", message: "invalid_query_param", detail: verboseParam.error });
+      return;
+    }
+
     if (req.method === "HEAD") {
       res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
       res.end();
@@ -368,11 +401,21 @@ async function route(
     }
 
     const readiness = orchestrator.getReadiness();
-    sendJson(res, 200, {
+    const payload: Record<string, unknown> = {
       ready: readiness.ready,
       uptimeSec: Math.floor((Date.now() - startedAt) / 1000),
       version: buildInfo.version
-    });
+    };
+
+    if (verboseParam.value === true) {
+      const dependencyEntries = Object.entries(readiness.dependencies);
+      payload.status = readiness.ready ? "ready" : "not_ready";
+      payload.timestamp = new Date().toISOString();
+      payload.dependencyCount = dependencyEntries.length;
+      payload.unhealthyDependencies = dependencyEntries.filter(([, healthy]) => !healthy).map(([name]) => name);
+    }
+
+    sendJson(res, 200, payload);
     return;
   }
 

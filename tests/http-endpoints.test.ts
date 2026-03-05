@@ -254,7 +254,7 @@ describe("HTTP endpoints", () => {
     expect(statsBody.requestsByEndpoint["/health"]).toBe(1);
   });
 
-  it("aceita HEAD em /health e /healthz para probes de liveness", async () => {
+  it("aceita HEAD em /health, /healthz e /healthz-lite para probes de liveness", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);
     runningServers.push(app);
@@ -275,6 +275,10 @@ describe("HTTP endpoints", () => {
     expect(healthzHeadRes.status).toBe(200);
     expect(await healthzHeadRes.text()).toBe("");
 
+    const healthzLiteHeadRes = await fetch(`${baseUrl}/healthz-lite`, { method: "HEAD" });
+    expect(healthzLiteHeadRes.status).toBe(200);
+    expect(await healthzLiteHeadRes.text()).toBe("");
+
     const aliveHeadRes = await fetch(`${baseUrl}/alivez`, { method: "HEAD" });
     expect(aliveHeadRes.status).toBe(200);
     expect(await aliveHeadRes.text()).toBe("");
@@ -283,6 +287,7 @@ describe("HTTP endpoints", () => {
     const statsBody = (await statsRes.json()) as { requestsByEndpoint: Record<string, number> };
     expect(statsBody.requestsByEndpoint["/health"]).toBe(1);
     expect(statsBody.requestsByEndpoint["/healthz"]).toBe(1);
+    expect(statsBody.requestsByEndpoint["/healthz-lite"]).toBe(1);
   });
 
   it("aceita HEAD em /stats para probes sem payload", async () => {
@@ -349,6 +354,62 @@ describe("HTTP endpoints", () => {
     const statsRes = await fetch(`${baseUrl}/stats`);
     const statsBody = (await statsRes.json()) as { requestsByEndpoint: Record<string, number> };
     expect(statsBody.requestsByEndpoint["/statusz"]).toBe(1);
+  });
+
+  it("expande /statusz com detalhes quando verbose=true", async () => {
+    const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
+    const app = createAppServer(orchestrator);
+    runningServers.push(app);
+
+    app.server.listen(0);
+    await once(app.server, "listening");
+
+    const address = app.server.address();
+    if (!address || typeof address === "string") throw new Error("Address inválido");
+
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    const res = await fetch(`${baseUrl}/statusz?verbose=true`);
+    expect(res.status).toBe(200);
+
+    const body = (await res.json()) as {
+      ready: boolean;
+      uptimeSec: number;
+      version: string;
+      status?: string;
+      timestamp?: string;
+      dependencyCount?: number;
+      unhealthyDependencies?: string[];
+    };
+
+    expect(body.ready).toBe(true);
+    expect(body.status).toBe("ready");
+    expect(typeof body.timestamp).toBe("string");
+    expect(body.dependencyCount).toBeGreaterThan(0);
+    expect(Array.isArray(body.unhealthyDependencies)).toBe(true);
+    expect(body.unhealthyDependencies).toHaveLength(0);
+  });
+
+  it("valida querystring de /statusz e retorna 400 para verbose inválido", async () => {
+    const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
+    const app = createAppServer(orchestrator);
+    runningServers.push(app);
+
+    app.server.listen(0);
+    await once(app.server, "listening");
+
+    const address = app.server.address();
+    if (!address || typeof address === "string") throw new Error("Address inválido");
+
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    const res = await fetch(`${baseUrl}/statusz?verbose=maybe`);
+    expect(res.status).toBe(400);
+
+    const body = (await res.json()) as { status: string; message: string; detail: string };
+    expect(body.status).toBe("error");
+    expect(body.message).toBe("invalid_query_param");
+    expect(body.detail).toContain("verbose must be a boolean");
   });
 
   it("retorna 415 quando POST /run não recebe content-type JSON", async () => {
