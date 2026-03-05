@@ -14,7 +14,7 @@ afterEach(async () => {
 });
 
 describe("HTTP endpoints", () => {
-  it("expõe /health, /pingz, /readyz, /statusz, /metrics, /diag, /build-info, /routes-hash e /openapi-lite", async () => {
+  it("expõe /health, /pingz, /timez, /readyz, /statusz, /metrics, /diag, /build-info, /routes-hash e /openapi-lite", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);
     runningServers.push(app);
@@ -40,6 +40,13 @@ describe("HTTP endpoints", () => {
     expect(typeof pingzBody.localLatencyMs).toBe("number");
     expect(pingzBody.localLatencyMs).toBeGreaterThanOrEqual(0);
     expect(Number.isNaN(Date.parse(pingzBody.timestamp))).toBe(false);
+
+    const timezRes = await fetch(`${baseUrl}/timez`);
+    expect(timezRes.status).toBe(200);
+    const timezBody = (await timezRes.json()) as { serverTimeUtc: string; uptimeSec: number };
+    expect(Number.isNaN(Date.parse(timezBody.serverTimeUtc))).toBe(false);
+    expect(typeof timezBody.uptimeSec).toBe("number");
+    expect(timezBody.uptimeSec).toBeGreaterThanOrEqual(0);
 
     const readyRes = await fetch(`${baseUrl}/readyz`);
     expect(readyRes.status).toBe(200);
@@ -121,6 +128,7 @@ describe("HTTP endpoints", () => {
       expect.arrayContaining([
         expect.objectContaining({ method: "GET", path: "/health" }),
         expect.objectContaining({ method: "GET", path: "/pingz" }),
+        expect.objectContaining({ method: "GET", path: "/timez" }),
         expect.objectContaining({ method: "GET", path: "/statusz" }),
         expect.objectContaining({ method: "GET", path: "/routes-hash" }),
         expect.objectContaining({ method: "GET", path: "/openapi-lite" }),

@@ -47,6 +47,13 @@ function sendJson(res: ServerResponse, statusCode: number, payload: unknown) {
   res.end(JSON.stringify(payload));
 }
 
+class InvalidJsonBodyError extends Error {
+  constructor() {
+    super("invalid_json_body");
+    this.name = "InvalidJsonBodyError";
+  }
+}
+
 async function readJsonBody(req: IncomingMessage): Promise<unknown> {
   const chunks: Buffer[] = [];
 
@@ -57,7 +64,11 @@ async function readJsonBody(req: IncomingMessage): Promise<unknown> {
   const rawBody = Buffer.concat(chunks).toString("utf-8").trim();
   if (!rawBody) return {};
 
-  return JSON.parse(rawBody) as unknown;
+  try {
+    return JSON.parse(rawBody) as unknown;
+  } catch {
+    throw new InvalidJsonBodyError();
+  }
 }
 
 function isTaskInput(payload: unknown): payload is TaskInput {
@@ -76,6 +87,7 @@ const OPENAPI_LITE_ENDPOINTS = [
   { method: "GET", path: "/health", summary: "Status do processo" },
   { method: "GET", path: "/pingz", summary: "Latência local do request + timestamp" },
   { method: "GET", path: "/stats", summary: "Requests agregados por endpoint + uptime" },
+  { method: "GET", path: "/timez", summary: "Hora UTC do servidor + uptime" },
   { method: "GET", path: "/readyz", summary: "Prontidão do orchestrator e dependências" },
   { method: "GET", path: "/statusz", summary: "Resumo compacto: ready, uptimeSec, version" },
   { method: "GET", path: "/metrics", summary: "Snapshot de métricas" },
@@ -102,7 +114,7 @@ async function route(
   const startedAtNs = process.hrtime.bigint();
   requestsByEndpoint.set(endpoint, (requestsByEndpoint.get(endpoint) ?? 0) + 1);
 
-  if (req.method === "GET" && req.url === "/health") {
+  if (req.method === "GET" && endpoint === "/health") {
     sendJson(res, 200, {
       status: "ok",
       uptimeSec: Math.floor((Date.now() - startedAt) / 1000),
@@ -111,7 +123,7 @@ async function route(
     return;
   }
 
-  if (req.method === "GET" && req.url === "/pingz") {
+  if (req.method === "GET" && endpoint === "/pingz") {
     const localLatencyMs = Number(process.hrtime.bigint() - startedAtNs) / 1_000_000;
     sendJson(res, 200, {
       status: "ok",
@@ -121,7 +133,7 @@ async function route(
     return;
   }
 
-  if (req.method === "GET" && req.url === "/stats") {
+  if (req.method === "GET" && endpoint === "/stats") {
     sendJson(res, 200, {
       uptimeSec: Math.floor((Date.now() - startedAt) / 1000),
       totalRequests: Array.from(requestsByEndpoint.values()).reduce((acc, current) => acc + current, 0),
@@ -130,7 +142,15 @@ async function route(
     return;
   }
 
-  if (req.method === "GET" && req.url === "/readyz") {
+  if (req.method === "GET" && endpoint === "/timez") {
+    sendJson(res, 200, {
+      serverTimeUtc: new Date().toISOString(),
+      uptimeSec: Math.floor((Date.now() - startedAt) / 1000)
+    });
+    return;
+  }
+
+  if (req.method === "GET" && endpoint === "/readyz") {
     const readiness = orchestrator.getReadiness();
     sendJson(res, readiness.ready ? 200 : 503, {
       status: readiness.ready ? "ready" : "not_ready",
@@ -141,7 +161,7 @@ async function route(
   }
 
 
-  if (req.method === "GET" && req.url === "/statusz") {
+  if (req.method === "GET" && endpoint === "/statusz") {
     const readiness = orchestrator.getReadiness();
     sendJson(res, 200, {
       ready: readiness.ready,
@@ -151,22 +171,22 @@ async function route(
     return;
   }
 
-  if (req.method === "GET" && req.url === "/metrics") {
+  if (req.method === "GET" && endpoint === "/metrics") {
     sendJson(res, 200, orchestrator.getMetricsSnapshot());
     return;
   }
 
-  if (req.method === "GET" && req.url === "/diag") {
+  if (req.method === "GET" && endpoint === "/diag") {
     sendJson(res, 200, orchestrator.getDiagnosticSummary());
     return;
   }
 
-  if (req.method === "GET" && req.url === "/build-info") {
+  if (req.method === "GET" && endpoint === "/build-info") {
     sendJson(res, 200, buildInfo);
     return;
   }
 
-  if (req.method === "GET" && req.url === "/routes-hash") {
+  if (req.method === "GET" && endpoint === "/routes-hash") {
     sendJson(res, 200, {
       algorithm: "sha256",
       hash: ROUTES_SIGNATURE_SHA256
@@ -174,7 +194,7 @@ async function route(
     return;
   }
 
-  if (req.method === "GET" && req.url === "/openapi-lite") {
+  if (req.method === "GET" && endpoint === "/openapi-lite") {
     sendJson(res, 200, {
       openapi: "3.1.0-lite",
       info: {
@@ -186,7 +206,7 @@ async function route(
     return;
   }
 
-  if (req.method === "POST" && req.url === "/run") {
+  if (req.method === "POST" && endpoint === "/run") {
     const traceId = randomUUID();
 
     try {
@@ -207,6 +227,15 @@ async function route(
       });
       return;
     } catch (error) {
+      if (error instanceof InvalidJsonBodyError) {
+        sendJson(res, 400, {
+          status: "error",
+          message: "invalid_json_body",
+          traceId
+        });
+        return;
+      }
+
       sendJson(res, 500, {
         status: "error",
         message: "run_failed",
@@ -266,7 +295,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   server.listen(port, () => {
     console.log(`HTTP server listening on http://localhost:${port}`);
     console.log(
-      "Endpoints: GET /health | GET /pingz | GET /stats | GET /readyz | GET /statusz | GET /metrics | GET /diag | GET /build-info | GET /routes-hash | GET /openapi-lite | POST /run"
+      "Endpoints: GET /health | GET /pingz | GET /stats | GET /timez | GET /readyz | GET /statusz | GET /metrics | GET /diag | GET /build-info | GET /routes-hash | GET /openapi-lite | POST /run"
     );
   });
 }
