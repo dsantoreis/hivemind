@@ -240,6 +240,8 @@ async function route(
     const resetCounters = requestUrl.searchParams.get("reset") === "1";
     const excludeSelf = requestUrl.searchParams.get("excludeSelf") === "1";
     const endpointPrefix = requestUrl.searchParams.get("prefix")?.trim() ?? "";
+    const minCountRaw = requestUrl.searchParams.get("minCount");
+    const minCount = minCountRaw ? Number(minCountRaw) : Number.NaN;
     const topRaw = requestUrl.searchParams.get("top");
     const topLimit = topRaw ? Number(topRaw) : Number.NaN;
 
@@ -250,9 +252,13 @@ async function route(
       else effectiveRequestsByEndpoint.delete("/stats");
     }
 
-    const filteredRequestsByEndpoint = endpointPrefix.length > 0
+    const prefixedRequestsByEndpoint = endpointPrefix.length > 0
       ? new Map(Array.from(effectiveRequestsByEndpoint.entries()).filter(([path]) => path.startsWith(endpointPrefix)))
       : effectiveRequestsByEndpoint;
+
+    const filteredRequestsByEndpoint = Number.isFinite(minCount) && minCount > 0
+      ? new Map(Array.from(prefixedRequestsByEndpoint.entries()).filter(([, count]) => count >= Math.floor(minCount)))
+      : prefixedRequestsByEndpoint;
 
     const sortedEndpoints = Array.from(filteredRequestsByEndpoint.entries()).sort((a, b) => {
       const countDelta = b[1] - a[1];
@@ -270,7 +276,8 @@ async function route(
       topEndpoints,
       resetApplied: resetCounters,
       excludeSelfApplied: excludeSelf,
-      prefixApplied: endpointPrefix.length > 0 ? endpointPrefix : null
+      prefixApplied: endpointPrefix.length > 0 ? endpointPrefix : null,
+      minCountApplied: Number.isFinite(minCount) && minCount > 0 ? Math.floor(minCount) : null
     });
 
     if (resetCounters) {

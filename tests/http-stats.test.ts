@@ -177,6 +177,39 @@ describe("HTTP /stats", () => {
     });
   });
 
+  it("filtra endpoints por contagem mínima com ?minCount=2", async () => {
+    const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
+    const app = createAppServer(orchestrator);
+    runningServers.push(app);
+
+    app.server.listen(0);
+    await once(app.server, "listening");
+
+    const address = app.server.address();
+    if (!address || typeof address === "string") throw new Error("Address inválido");
+
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    await fetch(`${baseUrl}/health`);
+    await fetch(`${baseUrl}/health`);
+    await fetch(`${baseUrl}/metrics`);
+
+    const statsRes = await fetch(`${baseUrl}/stats?minCount=2`);
+    expect(statsRes.status).toBe(200);
+
+    const statsBody = (await statsRes.json()) as {
+      totalRequests: number;
+      requestsByEndpoint: Record<string, number>;
+      minCountApplied: number | null;
+    };
+
+    expect(statsBody.minCountApplied).toBe(2);
+    expect(statsBody.totalRequests).toBe(2);
+    expect(statsBody.requestsByEndpoint).toEqual({
+      "/health": 2
+    });
+  });
+
   it("reseta contadores quando chamado com ?reset=1", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);
