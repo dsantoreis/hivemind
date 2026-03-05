@@ -53,6 +53,36 @@ describe("HTTP /stats", () => {
     expect(statsBody.resetApplied).toBe(false);
   });
 
+  it("retorna lista ordenada completa em endpoints", async () => {
+    const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
+    const app = createAppServer(orchestrator);
+    runningServers.push(app);
+
+    app.server.listen(0);
+    await once(app.server, "listening");
+
+    const address = app.server.address();
+    if (!address || typeof address === "string") throw new Error("Address inválido");
+
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    await fetch(`${baseUrl}/health`);
+    await fetch(`${baseUrl}/metrics`);
+    await fetch(`${baseUrl}/metrics`);
+
+    const statsRes = await fetch(`${baseUrl}/stats?excludeSelf=1`);
+    expect(statsRes.status).toBe(200);
+
+    const statsBody = (await statsRes.json()) as {
+      endpoints: Array<{ path: string; count: number }>;
+    };
+
+    expect(statsBody.endpoints).toEqual([
+      { path: "/metrics", count: 2 },
+      { path: "/health", count: 1 }
+    ]);
+  });
+
   it("retorna ranking top de endpoints quando chamado com ?top=N", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);

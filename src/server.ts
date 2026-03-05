@@ -370,9 +370,8 @@ async function route(
       if (countDelta !== 0) return countDelta;
       return a[0].localeCompare(b[0]);
     });
-    const topEndpoints = topLimit
-      ? sortedEndpoints.slice(0, topLimit).map(([path, count]) => ({ path, count }))
-      : [];
+    const endpoints = sortedEndpoints.map(([path, count]) => ({ path, count }));
+    const topEndpoints = topLimit ? endpoints.slice(0, topLimit) : [];
 
     sendJson(res, 200, {
       uptimeSec: Math.floor((Date.now() - startedAt) / 1000),
@@ -380,6 +379,7 @@ async function route(
       uniqueEndpoints: filteredRequestsByEndpoint.size,
       filteredOutEndpoints: effectiveRequestsByEndpoint.size - filteredRequestsByEndpoint.size,
       requestsByEndpoint: Object.fromEntries(filteredRequestsByEndpoint),
+      endpoints,
       topEndpoints,
       resetApplied: resetCounters,
       excludeSelfApplied: excludeSelf,
