@@ -445,13 +445,15 @@ async function route(
       return;
     }
 
+    const readiness = orchestrator.getReadiness();
+    const statusCode = readiness.ready ? 200 : 503;
+
     if (req.method === "HEAD") {
-      res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
+      res.writeHead(statusCode, { "content-type": "application/json; charset=utf-8" });
       res.end();
       return;
     }
 
-    const readiness = orchestrator.getReadiness();
     const payload: Record<string, unknown> = {
       ready: readiness.ready,
       uptimeSec: Math.floor((Date.now() - startedAt) / 1000),
@@ -466,7 +468,7 @@ async function route(
       payload.unhealthyDependencies = dependencyEntries.filter(([, healthy]) => !healthy).map(([name]) => name);
     }
 
-    sendJson(res, 200, payload);
+    sendJson(res, statusCode, payload);
     return;
   }
 

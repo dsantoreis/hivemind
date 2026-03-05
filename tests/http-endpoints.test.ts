@@ -360,6 +360,33 @@ describe("HTTP endpoints", () => {
     expect(statsBody.requestsByEndpoint["/statusz"]).toBe(1);
   });
 
+  it("retorna 503 em /statusz (GET/HEAD) quando orchestrator não está pronto", async () => {
+    const orchestrator = ReliableMultiAgentOrchestrator.fromEnv({ agents: [] });
+    const app = createAppServer(orchestrator);
+    runningServers.push(app);
+
+    app.server.listen(0);
+    await once(app.server, "listening");
+
+    const address = app.server.address();
+    if (!address || typeof address === "string") throw new Error("Address inválido");
+
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    const getRes = await fetch(`${baseUrl}/statusz`);
+    expect(getRes.status).toBe(503);
+
+    const getBody = (await getRes.json()) as { ready: boolean; uptimeSec: number; version: string };
+    expect(getBody.ready).toBe(false);
+    expect(typeof getBody.uptimeSec).toBe("number");
+    expect(getBody.uptimeSec).toBeGreaterThanOrEqual(0);
+    expect(typeof getBody.version).toBe("string");
+
+    const headRes = await fetch(`${baseUrl}/statusz`, { method: "HEAD" });
+    expect(headRes.status).toBe(503);
+    expect(await headRes.text()).toBe("");
+  });
+
   it("expande /statusz com detalhes quando verbose=true", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);
