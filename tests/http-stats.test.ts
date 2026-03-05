@@ -143,6 +143,40 @@ describe("HTTP /stats", () => {
     expect(statsBody.requestsByEndpoint["/stats"]).toBeUndefined();
   });
 
+  it("filtra por prefixo com ?prefix=/he", async () => {
+    const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
+    const app = createAppServer(orchestrator);
+    runningServers.push(app);
+
+    app.server.listen(0);
+    await once(app.server, "listening");
+
+    const address = app.server.address();
+    if (!address || typeof address === "string") throw new Error("Address inválido");
+
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    await fetch(`${baseUrl}/health`);
+    await fetch(`${baseUrl}/healthz-lite`);
+    await fetch(`${baseUrl}/metrics`);
+
+    const statsRes = await fetch(`${baseUrl}/stats?prefix=/he`);
+    expect(statsRes.status).toBe(200);
+
+    const statsBody = (await statsRes.json()) as {
+      totalRequests: number;
+      requestsByEndpoint: Record<string, number>;
+      prefixApplied: string | null;
+    };
+
+    expect(statsBody.prefixApplied).toBe("/he");
+    expect(statsBody.totalRequests).toBe(2);
+    expect(statsBody.requestsByEndpoint).toEqual({
+      "/health": 1,
+      "/healthz-lite": 1
+    });
+  });
+
   it("reseta contadores quando chamado com ?reset=1", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);
