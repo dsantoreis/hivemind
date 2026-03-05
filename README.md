@@ -18,6 +18,7 @@ Demo comercial de **automação multi-agente confiável** focada em dores reais 
 - **Logs estruturados (JSON)**
 - **Métricas básicas** (counters + duração média/máxima)
 - **Persistência simples** em JSON local
+- **Endpoints HTTP de observabilidade** (`/health` e `/metrics`)
 - **Testes unitários, integração e cenários de falha**
 
 ## Casos de uso comerciais (Upwork-ready)
@@ -66,6 +67,24 @@ npm install
 npm run demo
 ```
 
+## Subir servidor HTTP (Step5)
+
+```bash
+npm run serve
+# opcional: PORT=4000 npm run serve
+```
+
+Endpoints:
+- `GET /health` → status do processo
+- `GET /metrics` → snapshot das métricas atuais
+
+Validação rápida:
+
+```bash
+curl -s http://localhost:3000/health
+curl -s http://localhost:3000/metrics
+```
+
 ### Exemplo de execução (com script pronto)
 
 ```bash
@@ -84,21 +103,26 @@ RETRY_ATTEMPTS=3 AGENT_TIMEOUT_MS=500 npm run demo
 |---|---|
 | `./scripts/setup.sh` | Bootstrap local (checks + deps + verify) |
 | `npm run demo` | Executa a demo principal |
+| `npm run serve` | Sobe servidor HTTP com `/health` e `/metrics` |
 | `./examples/run-enterprise-demo.sh` | Exemplo executável com env enterprise |
 | `npm run lint` | Validação TypeScript sem gerar artefatos |
 | `npm run test` | Roda toda a suíte de testes |
 | `npm run test:unit` | Roda testes unitários da orquestração |
 | `npm run test:smoke` | Roda smoke test da CLI |
 | `npm run test:basic` | Valida o script de exemplo executável |
-| `npm run verify:quick` | Verificação rápida: lint + unit + smoke + basic |
+| `npm run test:http` | Valida endpoints `/health` e `/metrics` |
+| `npm run verify:quick` | Verificação rápida: lint + unit + smoke + basic + http |
+| `npm run verify:full` | Gate final pré-publicação: lint + unit + smoke + http + build |
 | `npm run build` | Compila o projeto para `dist/` |
 
 ## Testes e build
 
 ```bash
 npm run verify:quick
-npm run build
+npm run verify:full
 ```
+
+`verify:full` é o **gate final pré-publicação** deste repositório.
 
 Suite inclui:
 - **unit**: orquestração + idempotência
@@ -117,10 +141,12 @@ src/
   utils/            # idempotência
   orchestrator.ts   # coordenador confiável
   config.ts         # env config
-  index.ts          # entrypoint
+  index.ts          # entrypoint demo
+  server.ts         # HTTP endpoints /health e /metrics
 tests/
   orchestrator.test.ts
   cli.smoke.test.ts
+  http-endpoints.test.ts
   failure-scenarios.test.ts
 ```
 

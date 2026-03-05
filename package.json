@@ -7,12 +7,15 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "demo": "tsx src/index.ts",
+    "serve": "tsx src/server.ts",
     "lint": "tsc -p tsconfig.json --noEmit",
-    "verify:quick": "npm run lint && npm run test:unit && npm run test:smoke && npm run test:basic",
+    "verify:quick": "npm run lint && npm run test:unit && npm run test:smoke && npm run test:basic && npm run test:http",
+    "verify:full": "npm run lint && npm run test:unit && npm run test:smoke && npm run test:http && npm run build",
     "test": "vitest run",
     "test:unit": "vitest run tests/orchestrator.test.ts",
     "test:smoke": "vitest run tests/cli.smoke.test.ts",
     "test:basic": "vitest run tests/basic-example.test.ts",
+    "test:http": "vitest run tests/http-endpoints.test.ts",
     "test:watch": "vitest"
   },
   "keywords": [
