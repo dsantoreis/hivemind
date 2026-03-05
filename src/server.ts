@@ -190,7 +190,13 @@ async function route(
     return;
   }
 
-  if (req.method === "GET" && endpoint === "/alivez") {
+  if ((req.method === "GET" || req.method === "HEAD") && endpoint === "/alivez") {
+    if (req.method === "HEAD") {
+      res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
+      res.end();
+      return;
+    }
+
     sendJson(res, 200, {
       status: "alive"
     });

@@ -258,6 +258,10 @@ describe("HTTP endpoints", () => {
     expect(headRes.status).toBe(200);
     expect(await headRes.text()).toBe("");
 
+    const aliveHeadRes = await fetch(`${baseUrl}/alivez`, { method: "HEAD" });
+    expect(aliveHeadRes.status).toBe(200);
+    expect(await aliveHeadRes.text()).toBe("");
+
     const statsRes = await fetch(`${baseUrl}/stats`);
     const statsBody = (await statsRes.json()) as { requestsByEndpoint: Record<string, number> };
     expect(statsBody.requestsByEndpoint["/health"]).toBe(1);
