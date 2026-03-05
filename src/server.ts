@@ -1,5 +1,7 @@
 import { createServer as createHttpServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
+import { randomUUID } from "node:crypto";
 import { ReliableMultiAgentOrchestrator } from "./orchestrator.js";
+import type { TaskInput } from "./types.js";
 
 export interface AppServer {
   server: Server;
@@ -11,18 +13,38 @@ function sendJson(res: ServerResponse, statusCode: number, payload: unknown) {
   res.end(JSON.stringify(payload));
 }
 
-function route(
+async function readJsonBody(req: IncomingMessage): Promise<unknown> {
+  const chunks: Buffer[] = [];
+
+  for await (const chunk of req) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+
+  const rawBody = Buffer.concat(chunks).toString("utf-8").trim();
+  if (!rawBody) return {};
+
+  return JSON.parse(rawBody) as unknown;
+}
+
+function isTaskInput(payload: unknown): payload is TaskInput {
+  if (!payload || typeof payload !== "object") return false;
+
+  const candidate = payload as Partial<TaskInput>;
+  if (typeof candidate.goal !== "string" || candidate.goal.trim().length === 0) return false;
+
+  if (candidate.id !== undefined && typeof candidate.id !== "string") return false;
+  if (candidate.context !== undefined && (typeof candidate.context !== "object" || candidate.context === null)) return false;
+
+  return true;
+}
+
+async function route(
   req: IncomingMessage,
   res: ServerResponse,
   orchestrator: ReliableMultiAgentOrchestrator,
   startedAt: number
 ) {
-  if (req.method !== "GET") {
-    sendJson(res, 405, { status: "error", message: "method_not_allowed" });
-    return;
-  }
-
-  if (req.url === "/health") {
+  if (req.method === "GET" && req.url === "/health") {
     sendJson(res, 200, {
       status: "ok",
       uptimeSec: Math.floor((Date.now() - startedAt) / 1000),
@@ -31,8 +53,44 @@ function route(
     return;
   }
 
-  if (req.url === "/metrics") {
+  if (req.method === "GET" && req.url === "/metrics") {
     sendJson(res, 200, orchestrator.getMetricsSnapshot());
+    return;
+  }
+
+  if (req.method === "POST" && req.url === "/run") {
+    const traceId = randomUUID();
+
+    try {
+      const payload = await readJsonBody(req);
+      if (!isTaskInput(payload)) {
+        sendJson(res, 400, {
+          status: "error",
+          message: "invalid_payload",
+          traceId
+        });
+        return;
+      }
+
+      const result = await orchestrator.run(payload);
+      sendJson(res, 200, {
+        traceId,
+        result
+      });
+      return;
+    } catch (error) {
+      sendJson(res, 500, {
+        status: "error",
+        message: "run_failed",
+        traceId,
+        error: (error as Error).message
+      });
+      return;
+    }
+  }
+
+  if (req.method !== "GET" && req.method !== "POST") {
+    sendJson(res, 405, { status: "error", message: "method_not_allowed" });
     return;
   }
 
@@ -41,7 +99,15 @@ function route(
 
 export function createAppServer(orchestrator: ReliableMultiAgentOrchestrator): AppServer {
   const startedAt = Date.now();
-  const server = createHttpServer((req, res) => route(req, res, orchestrator, startedAt));
+  const server = createHttpServer((req, res) => {
+    route(req, res, orchestrator, startedAt).catch((error) => {
+      sendJson(res, 500, {
+        status: "error",
+        message: "internal_server_error",
+        error: (error as Error).message
+      });
+    });
+  });
 
   return {
     server,
@@ -62,6 +128,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
   server.listen(port, () => {
     console.log(`HTTP server listening on http://localhost:${port}`);
-    console.log("Endpoints: GET /health | GET /metrics");
+    console.log("Endpoints: GET /health | GET /metrics | POST /run");
   });
 }

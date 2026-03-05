@@ -77,12 +77,25 @@ npm run serve
 Endpoints:
 - `GET /health` → status do processo
 - `GET /metrics` → snapshot das métricas atuais
+- `POST /run` → executa workflow mínimo com payload JSON e retorna `traceId`
 
 Validação rápida:
 
 ```bash
 curl -s http://localhost:3000/health
 curl -s http://localhost:3000/metrics
+```
+
+Exemplo `POST /run`:
+
+```bash
+curl -s -X POST http://localhost:3000/run \
+  -H 'content-type: application/json' \
+  -d '{
+    "id": "curl-run-001",
+    "goal": "Executar workflow mínimo via API",
+    "context": { "source": "readme-curl" }
+  }'
 ```
 
 ### Exemplo de execução (com script pronto)
