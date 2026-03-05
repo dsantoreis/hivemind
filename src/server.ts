@@ -286,19 +286,24 @@ async function route(
       return;
     }
 
-    const resetCounters = requestUrl.searchParams.get("reset") === "1";
-    const excludeSelf = requestUrl.searchParams.get("excludeSelf") === "1";
+    const resetParse = parseBooleanQueryParam(requestUrl, "reset");
+    const excludeSelfParse = parseBooleanQueryParam(requestUrl, "excludeSelf");
     const endpointPrefix = requestUrl.searchParams.get("prefix")?.trim() ?? "";
     const minCountParse = parsePositiveIntQueryParam(requestUrl, "minCount");
     const topParse = parsePositiveIntQueryParam(requestUrl, "top");
 
-    if (minCountParse.error || topParse.error) {
+    if (resetParse.error || excludeSelfParse.error || minCountParse.error || topParse.error) {
       sendJson(res, 400, {
         error: "invalid_query_params",
-        details: [minCountParse.error, topParse.error].filter((value): value is string => Boolean(value))
+        details: [resetParse.error, excludeSelfParse.error, minCountParse.error, topParse.error].filter(
+          (value): value is string => Boolean(value)
+        )
       });
       return;
     }
+
+    const resetCounters = resetParse.value === true;
+    const excludeSelf = excludeSelfParse.value === true;
 
     const minCount = minCountParse.value;
     const topLimit = topParse.value;

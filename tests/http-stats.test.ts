@@ -238,6 +238,47 @@ describe("HTTP /stats", () => {
     ]);
   });
 
+  it("aceita reset/excludeSelf como boolean query param e valida valores inválidos", async () => {
+    const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
+    const app = createAppServer(orchestrator);
+    runningServers.push(app);
+
+    app.server.listen(0);
+    await once(app.server, "listening");
+
+    const address = app.server.address();
+    if (!address || typeof address === "string") throw new Error("Address inválido");
+
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    await fetch(`${baseUrl}/health`);
+    await fetch(`${baseUrl}/health`);
+
+    const boolRes = await fetch(`${baseUrl}/stats?excludeSelf=true&reset=yes`);
+    expect(boolRes.status).toBe(200);
+
+    const boolBody = (await boolRes.json()) as {
+      excludeSelfApplied: boolean;
+      resetApplied: boolean;
+      requestsByEndpoint: Record<string, number>;
+    };
+
+    expect(boolBody.excludeSelfApplied).toBe(true);
+    expect(boolBody.resetApplied).toBe(true);
+    expect(boolBody.requestsByEndpoint["/stats"]).toBeUndefined();
+
+    const invalidRes = await fetch(`${baseUrl}/stats?excludeSelf=talvez`);
+    expect(invalidRes.status).toBe(400);
+
+    const invalidBody = (await invalidRes.json()) as {
+      error: string;
+      details: string[];
+    };
+
+    expect(invalidBody.error).toBe("invalid_query_params");
+    expect(invalidBody.details).toEqual(["excludeSelf must be a boolean (true/false/1/0)"]);
+  });
+
   it("reseta contadores quando chamado com ?reset=1", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);
