@@ -14,7 +14,7 @@ afterEach(async () => {
 });
 
 describe("HTTP endpoints", () => {
-  it("expõe /health, /readyz, /metrics, /diag, /build-info, /routes-hash e /openapi-lite", async () => {
+  it("expõe /health, /readyz, /statusz, /metrics, /diag, /build-info, /routes-hash e /openapi-lite", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);
     runningServers.push(app);
@@ -43,6 +43,15 @@ describe("HTTP endpoints", () => {
     expect(readyBody.status).toBe("ready");
     expect(readyBody.ready).toBe(true);
     expect(Object.values(readyBody.dependencies).every(Boolean)).toBe(true);
+
+
+    const statuszRes = await fetch(`${baseUrl}/statusz`);
+    expect(statuszRes.status).toBe(200);
+    const statuszBody = (await statuszRes.json()) as { ready: boolean; uptimeSec: number; version: string };
+    expect(statuszBody.ready).toBe(true);
+    expect(typeof statuszBody.uptimeSec).toBe("number");
+    expect(statuszBody.uptimeSec).toBeGreaterThanOrEqual(0);
+    expect(statuszBody.version).toMatch(/^\d+\.\d+\.\d+(-.+)?$|^unknown$/);
 
     const metricsRes = await fetch(`${baseUrl}/metrics`);
     expect(metricsRes.status).toBe(200);
@@ -103,6 +112,7 @@ describe("HTTP endpoints", () => {
     expect(openApiLiteBody.endpoints).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ method: "GET", path: "/health" }),
+        expect.objectContaining({ method: "GET", path: "/statusz" }),
         expect.objectContaining({ method: "GET", path: "/routes-hash" }),
         expect.objectContaining({ method: "GET", path: "/openapi-lite" }),
         expect.objectContaining({ method: "POST", path: "/run" })
