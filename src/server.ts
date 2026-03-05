@@ -521,10 +521,16 @@ async function route(
     return;
   }
 
-  if (req.method === "GET" && endpoint === "/routes-hash") {
+  if ((req.method === "GET" || req.method === "HEAD") && endpoint === "/routes-hash") {
     const includeRoutesParam = parseBooleanQueryParam(requestUrl, "includeRoutes");
     if (includeRoutesParam.error) {
       sendJson(res, 400, { status: "error", message: "invalid_query_param", detail: includeRoutesParam.error });
+      return;
+    }
+
+    if (req.method === "HEAD") {
+      res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
+      res.end();
       return;
     }
 
