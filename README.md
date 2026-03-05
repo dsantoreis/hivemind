@@ -76,6 +76,7 @@ npm run serve
 
 Endpoints:
 - `GET /health` → status do processo
+- `HEAD /health` → liveness probe sem payload (health-check rápido)
 - `GET /alivez` → status simples de vida (`status: alive`)
 - `GET /healthz-lite` → health mínimo (`status` + `uptimeSec`)
 - `GET /echoz` → echo mínimo (`status` + `service`)

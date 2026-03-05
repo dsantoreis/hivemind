@@ -144,7 +144,13 @@ async function route(
   const startedAtNs = process.hrtime.bigint();
   requestsByEndpoint.set(endpoint, (requestsByEndpoint.get(endpoint) ?? 0) + 1);
 
-  if (req.method === "GET" && endpoint === "/health") {
+  if ((req.method === "GET" || req.method === "HEAD") && endpoint === "/health") {
+    if (req.method === "HEAD") {
+      res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
+      res.end();
+      return;
+    }
+
     sendJson(res, 200, {
       status: "ok",
       uptimeSec: Math.floor((Date.now() - startedAt) / 1000),
