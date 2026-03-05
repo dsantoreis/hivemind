@@ -13,7 +13,7 @@ afterEach(async () => {
 });
 
 describe("HTTP endpoints", () => {
-  it("expõe /health, /readyz, /metrics e /version", async () => {
+  it("expõe /health, /readyz, /metrics, /diag e /version", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);
     runningServers.push(app);
@@ -48,6 +48,27 @@ describe("HTTP endpoints", () => {
     const metricsBody = (await metricsRes.json()) as { counters: Record<string, number>; durations: Record<string, unknown> };
     expect(metricsBody).toHaveProperty("counters");
     expect(metricsBody).toHaveProperty("durations");
+
+    const diagRes = await fetch(`${baseUrl}/diag`);
+    expect(diagRes.status).toBe(200);
+    const diagBody = (await diagRes.json()) as {
+      orchestrator: { coordinator: string; agentCount: number; agents: string[] };
+      config: { retryAttempts: number; stateStoreType: string; queueType: string };
+      runtime: { readiness: { ready: boolean }; queueDepth: number };
+      metrics: { counters: Record<string, number>; durations: Record<string, unknown> };
+    };
+    expect(diagBody.orchestrator.coordinator).toBe("coordinator");
+    expect(diagBody.orchestrator.agentCount).toBeGreaterThan(0);
+    expect(diagBody.orchestrator.agents.length).toBe(diagBody.orchestrator.agentCount);
+    expect(diagBody.config.retryAttempts).toBeGreaterThanOrEqual(1);
+    expect(diagBody.config.stateStoreType).toBe("FileStateStore");
+    expect(diagBody.config.queueType).toBe("InMemoryQueue");
+    expect(diagBody.runtime.readiness.ready).toBe(true);
+    expect(diagBody.runtime.queueDepth).toBeGreaterThanOrEqual(0);
+    expect(diagBody.metrics).toHaveProperty("counters");
+    expect(diagBody.metrics).toHaveProperty("durations");
+
+    expect("STATE_FILE" in diagBody.config).toBe(false);
 
     const versionRes = await fetch(`${baseUrl}/version`);
     expect(versionRes.status).toBe(200);

@@ -31,6 +31,28 @@ export interface ReadinessReport {
   };
 }
 
+export interface DiagnosticSummary {
+  orchestrator: {
+    coordinator: string;
+    agentCount: number;
+    agents: string[];
+  };
+  config: {
+    retryAttempts: number;
+    retryDelayMs: number;
+    agentTimeoutMs: number;
+    queueConcurrency: number;
+    logLevel: AppConfig["logLevel"];
+    stateStoreType: string;
+    queueType: string;
+  };
+  runtime: {
+    readiness: ReadinessReport;
+    queueDepth: number;
+  };
+  metrics: ReturnType<MetricsRegistry["snapshot"]>;
+}
+
 export class ReliableMultiAgentOrchestrator {
   private readonly coordinatorName = "coordinator";
 
@@ -78,6 +100,30 @@ export class ReliableMultiAgentOrchestrator {
     return {
       ready: Object.values(dependencies).every(Boolean),
       dependencies
+    };
+  }
+
+  getDiagnosticSummary(): DiagnosticSummary {
+    return {
+      orchestrator: {
+        coordinator: this.coordinatorName,
+        agentCount: this.deps.agents.length,
+        agents: this.deps.agents.map((agent) => agent.name)
+      },
+      config: {
+        retryAttempts: this.deps.config.retryAttempts,
+        retryDelayMs: this.deps.config.retryDelayMs,
+        agentTimeoutMs: this.deps.config.agentTimeoutMs,
+        queueConcurrency: this.deps.config.queueConcurrency,
+        logLevel: this.deps.config.logLevel,
+        stateStoreType: this.deps.stateStore.constructor.name,
+        queueType: this.deps.queue.constructor.name
+      },
+      runtime: {
+        readiness: this.getReadiness(),
+        queueDepth: this.deps.queue.size()
+      },
+      metrics: this.getMetricsSnapshot()
     };
   }
 

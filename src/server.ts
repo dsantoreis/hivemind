@@ -87,6 +87,11 @@ async function route(
     return;
   }
 
+  if (req.method === "GET" && req.url === "/diag") {
+    sendJson(res, 200, orchestrator.getDiagnosticSummary());
+    return;
+  }
+
   if (req.method === "GET" && req.url === "/version") {
     sendJson(res, 200, {
       commitHash: buildInfo.commitHash,
@@ -170,6 +175,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
   server.listen(port, () => {
     console.log(`HTTP server listening on http://localhost:${port}`);
-    console.log("Endpoints: GET /health | GET /readyz | GET /metrics | GET /version | POST /run");
+    console.log("Endpoints: GET /health | GET /readyz | GET /metrics | GET /diag | GET /version | POST /run");
   });
 }
