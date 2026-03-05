@@ -1,19 +1,22 @@
-import { MultiAgentOrchestrator } from "./orchestrator.js";
+import { ReliableMultiAgentOrchestrator } from "./orchestrator.js";
 
 async function main() {
-  const orchestrator = new MultiAgentOrchestrator();
+  const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
 
   const result = await orchestrator.run({
     id: "task-001",
-    goal: "Criar um micro-serviço para sumarização de tickets"
+    goal: "Automatizar triagem de tickets enterprise com múltiplos agentes"
   });
 
-  console.log("=== DEMO MULTI-AGENTE (COORDENADOR + 2 WORKERS) ===");
+  console.log("=== DEMO ENTERPRISE MULTI-AGENTE ===");
   console.log(`Task: ${result.taskId}`);
   console.log(`Coordenador: ${result.coordinator}`);
   console.log("Workers:", result.steps.map((s) => s.agent).join(" + "));
+  console.log(`Cache hit: ${result.cached}`);
   console.log("\nResposta final:\n");
   console.log(result.finalAnswer);
+  console.log("\nMétricas:\n");
+  console.log(JSON.stringify(orchestrator.getMetricsSnapshot(), null, 2));
 }
 
 main().catch((error) => {
