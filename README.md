@@ -1,17 +1,34 @@
-# ai-agent-demo
+# ai-agent-demo (Enterprise Edition)
 
-Demo funcional em TypeScript de **orquestração multi-agente** com:
+Demo comercial de **automação multi-agente confiável** focada em dores reais de clientes Upwork:
 
-- 1 **coordenador** (`MultiAgentOrchestrator`)
-- 2 **workers** (`worker-research` e `worker-build`)
+- falhas intermitentes de integrações
+- jobs duplicados e retrabalho
+- falta de visibilidade operacional
+- pipelines sem timeout/retry
+- ausência de estado persistente para auditoria
 
-> Repositório local privado (`"private": true` no `package.json`).
+## O que este projeto entrega
 
-## Como funciona
+- **Arquitetura modular** (agents, core, queue, state, observability)
+- **Fila** in-memory para coordenação de execução
+- **Retries + timeout por agente**
+- **Idempotência** via chave SHA-256 (taskId + goal)
+- **Configuração por variáveis de ambiente**
+- **Logs estruturados (JSON)**
+- **Métricas básicas** (counters + duração média/máxima)
+- **Persistência simples** em JSON local
+- **Testes unitários, integração e cenários de falha**
 
-1. Coordenador recebe o objetivo (`Task`)
-2. Coordenador dispara os 2 workers em paralelo (`Promise.all`)
-3. Coordenador consolida os outputs e retorna resposta final
+## Casos de uso comerciais (Upwork-ready)
+
+1. **Triagem de tickets enterprise**
+   - Agente de pesquisa classifica prioridade e risco
+   - Agente de execução monta plano com rollout/rollback
+2. **Automação de onboarding de clientes B2B**
+   - Checagem de compliance + plano técnico em paralelo
+3. **Operação de suporte com SLA rígido**
+   - Timeout e retries evitam travamento silencioso
 
 ## Requisitos
 
@@ -24,29 +41,63 @@ Demo funcional em TypeScript de **orquestração multi-agente** com:
 npm install
 ```
 
-## Executar localmente
+## Variáveis de ambiente
+
+| Variável | Default | Função |
+|---|---:|---|
+| `RETRY_ATTEMPTS` | `2` | Total de tentativas por agente |
+| `RETRY_DELAY_MS` | `30` | Delay entre tentativas |
+| `AGENT_TIMEOUT_MS` | `1000` | Timeout por execução de agente |
+| `QUEUE_CONCURRENCY` | `2` | Reservado para expansão de workers concorrentes |
+| `STATE_FILE` | `.data/orchestrator-state.json` | Persistência do estado |
+| `LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
+
+## Executar demo
 
 ```bash
 npm run demo
-# ou
-./scripts/run-demo.sh
 ```
 
-## Testes básicos
+### Exemplo de execução
+
+```bash
+RETRY_ATTEMPTS=3 AGENT_TIMEOUT_MS=500 npm run demo
+```
+
+## Testes e build
 
 ```bash
 npm test
+npm run build
 ```
+
+Suite inclui:
+- **unit**: orquestração + idempotência
+- **integration/smoke**: execução real via CLI
+- **failure**: retry exhaustion + timeout
 
 ## Estrutura
 
 ```text
 src/
-  agents.ts        # 2 workers simulados
-  orchestrator.ts  # coordenador
-  index.ts         # entrada executável
+  agents/           # workers de domínio
+  core/             # retry + timeout
+  observability/    # logger JSON + métricas
+  queue/            # fila
+  state/            # persistência
+  utils/            # idempotência
+  orchestrator.ts   # coordenador confiável
+  config.ts         # env config
+  index.ts          # entrypoint
 tests/
   orchestrator.test.ts
-scripts/
-  run-demo.sh
+  cli.smoke.test.ts
+  failure-scenarios.test.ts
 ```
+
+## Próximo passo para produção
+
+- trocar fila in-memory por Redis/SQS
+- exportar métricas para Prometheus/DataDog
+- persistência em Postgres para auditoria completa
+- adicionar circuit breaker por integração externa
