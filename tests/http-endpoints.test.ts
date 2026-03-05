@@ -14,7 +14,7 @@ afterEach(async () => {
 });
 
 describe("HTTP endpoints", () => {
-  it("expõe /health, /alivez, /livez, /healthz-lite, /echoz, /pingz, /timez, /uptimez, /readyz, /readyz-lite, /statusz, /versionz, /meta-lite, /metrics, /diag, /diag-lite, /build-info, /build-lite, /routes-hash e /openapi-lite", async () => {
+  it("expõe /health, /healthz, /alivez, /livez, /healthz-lite, /echoz, /pingz, /timez, /uptimez, /readyz, /readyz-lite, /statusz, /versionz, /meta-lite, /metrics, /diag, /diag-lite, /build-info, /build-lite, /routes-hash e /openapi-lite", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);
     runningServers.push(app);
@@ -32,6 +32,12 @@ describe("HTTP endpoints", () => {
     const healthBody = (await healthRes.json()) as { status: string; uptimeSec: number };
     expect(healthBody.status).toBe("ok");
     expect(typeof healthBody.uptimeSec).toBe("number");
+
+    const healthzRes = await fetch(`${baseUrl}/healthz`);
+    expect(healthzRes.status).toBe(200);
+    const healthzBody = (await healthzRes.json()) as { status: string; uptimeSec: number };
+    expect(healthzBody.status).toBe("ok");
+    expect(typeof healthzBody.uptimeSec).toBe("number");
 
     const alivezRes = await fetch(`${baseUrl}/alivez`);
     expect(alivezRes.status).toBe(200);
@@ -201,6 +207,7 @@ describe("HTTP endpoints", () => {
     expect(openApiLiteBody.endpoints).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ method: "GET", path: "/health" }),
+        expect.objectContaining({ method: "GET", path: "/healthz" }),
         expect.objectContaining({ method: "GET", path: "/alivez" }),
         expect.objectContaining({ method: "GET", path: "/livez" }),
         expect.objectContaining({ method: "GET", path: "/healthz-lite" }),
@@ -247,7 +254,7 @@ describe("HTTP endpoints", () => {
     expect(statsBody.requestsByEndpoint["/health"]).toBe(1);
   });
 
-  it("aceita HEAD em /health para probes de liveness", async () => {
+  it("aceita HEAD em /health e /healthz para probes de liveness", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);
     runningServers.push(app);
@@ -264,6 +271,10 @@ describe("HTTP endpoints", () => {
     expect(headRes.status).toBe(200);
     expect(await headRes.text()).toBe("");
 
+    const healthzHeadRes = await fetch(`${baseUrl}/healthz`, { method: "HEAD" });
+    expect(healthzHeadRes.status).toBe(200);
+    expect(await healthzHeadRes.text()).toBe("");
+
     const aliveHeadRes = await fetch(`${baseUrl}/alivez`, { method: "HEAD" });
     expect(aliveHeadRes.status).toBe(200);
     expect(await aliveHeadRes.text()).toBe("");
@@ -271,6 +282,7 @@ describe("HTTP endpoints", () => {
     const statsRes = await fetch(`${baseUrl}/stats`);
     const statsBody = (await statsRes.json()) as { requestsByEndpoint: Record<string, number> };
     expect(statsBody.requestsByEndpoint["/health"]).toBe(1);
+    expect(statsBody.requestsByEndpoint["/healthz"]).toBe(1);
   });
 
   it("aceita HEAD em /stats para probes sem payload", async () => {

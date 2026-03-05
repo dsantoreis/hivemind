@@ -90,6 +90,7 @@ npm run serve
 
 Endpoints:
 - `GET /health` → status do processo
+- `GET /healthz` → alias Kubernetes-friendly para `/health`
 - `HEAD /health` → liveness probe sem payload (health-check rápido)
 - `GET /alivez` → status simples de vida (`status: alive`)
 - `GET /healthz-lite` → health mínimo (`status` + `uptimeSec`)
@@ -116,6 +117,7 @@ Validação rápida:
 
 ```bash
 curl -s http://localhost:3000/health
+curl -s http://localhost:3000/healthz
 curl -s http://localhost:3000/alivez
 curl -s http://localhost:3000/healthz-lite
 curl -s http://localhost:3000/echoz

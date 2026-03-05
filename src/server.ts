@@ -156,6 +156,7 @@ function parsePositiveIntQueryParam(
 
 const OPENAPI_LITE_ENDPOINTS = [
   { method: "GET", path: "/health", summary: "Status do processo" },
+  { method: "GET", path: "/healthz", summary: "Alias Kubernetes-friendly para /health" },
   { method: "GET", path: "/alivez", summary: "Status mínimo de vida do processo" },
   { method: "GET", path: "/livez", summary: "Alias Kubernetes-friendly para /alivez" },
   { method: "GET", path: "/healthz-lite", summary: "Health mínimo com status + uptimeSec" },
@@ -197,7 +198,7 @@ async function route(
   const startedAtNs = process.hrtime.bigint();
   requestsByEndpoint.set(endpoint, (requestsByEndpoint.get(endpoint) ?? 0) + 1);
 
-  if ((req.method === "GET" || req.method === "HEAD") && endpoint === "/health") {
+  if ((req.method === "GET" || req.method === "HEAD") && (endpoint === "/health" || endpoint === "/healthz")) {
     if (req.method === "HEAD") {
       res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
       res.end();
@@ -557,7 +558,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   server.listen(port, () => {
     console.log(`HTTP server listening on http://localhost:${port}`);
     console.log(
-      "Endpoints: GET /health | GET /alivez | GET /livez | GET /healthz-lite | GET /echoz | GET /pingz | GET /stats | GET /timez | GET /uptimez | GET /readyz | GET /readyz-lite | GET /statusz | GET /versionz | GET /meta-lite | GET /metrics | GET /diag | GET /diag-lite | GET /build-info | GET /build-lite | GET /routes-hash | GET /openapi-lite | POST /run"
+      "Endpoints: GET /health | GET /healthz | GET /alivez | GET /livez | GET /healthz-lite | GET /echoz | GET /pingz | GET /stats | GET /timez | GET /uptimez | GET /readyz | GET /readyz-lite | GET /statusz | GET /versionz | GET /meta-lite | GET /metrics | GET /diag | GET /diag-lite | GET /build-info | GET /build-lite | GET /routes-hash | GET /openapi-lite | POST /run"
     );
   });
 }
