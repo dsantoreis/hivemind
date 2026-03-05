@@ -626,6 +626,33 @@ describe("HTTP endpoints", () => {
     expect(statsBody.requestsByEndpoint["/routes-hash"]).toBe(1);
   });
 
+  it("aceita HEAD em /timez e /uptimez para probes sem payload", async () => {
+    const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
+    const app = createAppServer(orchestrator);
+    runningServers.push(app);
+
+    app.server.listen(0);
+    await once(app.server, "listening");
+
+    const address = app.server.address();
+    if (!address || typeof address === "string") throw new Error("Address inválido");
+
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    const timezHeadRes = await fetch(`${baseUrl}/timez`, { method: "HEAD" });
+    expect(timezHeadRes.status).toBe(200);
+    expect(await timezHeadRes.text()).toBe("");
+
+    const uptimezHeadRes = await fetch(`${baseUrl}/uptimez`, { method: "HEAD" });
+    expect(uptimezHeadRes.status).toBe(200);
+    expect(await uptimezHeadRes.text()).toBe("");
+
+    const statsRes = await fetch(`${baseUrl}/stats`);
+    const statsBody = (await statsRes.json()) as { requestsByEndpoint: Record<string, number> };
+    expect(statsBody.requestsByEndpoint["/timez"]).toBe(1);
+    expect(statsBody.requestsByEndpoint["/uptimez"]).toBe(1);
+  });
+
   it("aceita HEAD em /versionz e /build-lite para probes sem payload", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);

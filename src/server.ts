@@ -396,7 +396,13 @@ async function route(
     return;
   }
 
-  if (req.method === "GET" && endpoint === "/timez") {
+  if ((req.method === "GET" || req.method === "HEAD") && endpoint === "/timez") {
+    if (req.method === "HEAD") {
+      res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
+      res.end();
+      return;
+    }
+
     sendJson(res, 200, {
       serverTimeUtc: new Date().toISOString(),
       uptimeSec: Math.floor((Date.now() - startedAt) / 1000)
@@ -404,7 +410,13 @@ async function route(
     return;
   }
 
-  if (req.method === "GET" && endpoint === "/uptimez") {
+  if ((req.method === "GET" || req.method === "HEAD") && endpoint === "/uptimez") {
+    if (req.method === "HEAD") {
+      res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
+      res.end();
+      return;
+    }
+
     sendJson(res, 200, {
       uptimeSec: Math.floor((Date.now() - startedAt) / 1000),
       startedAtUtc: new Date(startedAt).toISOString()
