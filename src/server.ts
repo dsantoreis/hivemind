@@ -335,6 +335,8 @@ async function route(
     sendJson(res, 200, {
       uptimeSec: Math.floor((Date.now() - startedAt) / 1000),
       totalRequests: Array.from(filteredRequestsByEndpoint.values()).reduce((acc, current) => acc + current, 0),
+      uniqueEndpoints: filteredRequestsByEndpoint.size,
+      filteredOutEndpoints: effectiveRequestsByEndpoint.size - filteredRequestsByEndpoint.size,
       requestsByEndpoint: Object.fromEntries(filteredRequestsByEndpoint),
       topEndpoints,
       resetApplied: resetCounters,

@@ -36,6 +36,8 @@ describe("HTTP /stats", () => {
     const statsBody = (await statsRes.json()) as {
       uptimeSec: number;
       totalRequests: number;
+      uniqueEndpoints: number;
+      filteredOutEndpoints: number;
       requestsByEndpoint: Record<string, number>;
       resetApplied: boolean;
     };
@@ -46,6 +48,8 @@ describe("HTTP /stats", () => {
     expect(statsBody.requestsByEndpoint["/metrics"]).toBe(1);
     expect(statsBody.requestsByEndpoint["/stats"]).toBe(1);
     expect(statsBody.totalRequests).toBe(4);
+    expect(statsBody.uniqueEndpoints).toBe(3);
+    expect(statsBody.filteredOutEndpoints).toBe(0);
     expect(statsBody.resetApplied).toBe(false);
   });
 
@@ -165,12 +169,16 @@ describe("HTTP /stats", () => {
 
     const statsBody = (await statsRes.json()) as {
       totalRequests: number;
+      uniqueEndpoints: number;
+      filteredOutEndpoints: number;
       requestsByEndpoint: Record<string, number>;
       prefixApplied: string | null;
     };
 
     expect(statsBody.prefixApplied).toBe("/he");
     expect(statsBody.totalRequests).toBe(2);
+    expect(statsBody.uniqueEndpoints).toBe(2);
+    expect(statsBody.filteredOutEndpoints).toBe(2);
     expect(statsBody.requestsByEndpoint).toEqual({
       "/health": 1,
       "/healthz-lite": 1
