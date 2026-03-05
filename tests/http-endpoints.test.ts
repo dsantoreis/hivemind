@@ -13,7 +13,7 @@ afterEach(async () => {
 });
 
 describe("HTTP endpoints", () => {
-  it("expõe /health, /metrics e /version", async () => {
+  it("expõe /health, /readyz, /metrics e /version", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);
     runningServers.push(app);
@@ -31,6 +31,17 @@ describe("HTTP endpoints", () => {
     const healthBody = (await healthRes.json()) as { status: string; uptimeSec: number };
     expect(healthBody.status).toBe("ok");
     expect(typeof healthBody.uptimeSec).toBe("number");
+
+    const readyRes = await fetch(`${baseUrl}/readyz`);
+    expect(readyRes.status).toBe(200);
+    const readyBody = (await readyRes.json()) as {
+      status: string;
+      ready: boolean;
+      dependencies: Record<string, boolean>;
+    };
+    expect(readyBody.status).toBe("ready");
+    expect(readyBody.ready).toBe(true);
+    expect(Object.values(readyBody.dependencies).every(Boolean)).toBe(true);
 
     const metricsRes = await fetch(`${baseUrl}/metrics`);
     expect(metricsRes.status).toBe(200);

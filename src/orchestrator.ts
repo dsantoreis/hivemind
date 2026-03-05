@@ -20,6 +20,17 @@ interface Dependencies {
   agents: Agent[];
 }
 
+export interface ReadinessReport {
+  ready: boolean;
+  dependencies: {
+    logger: boolean;
+    metrics: boolean;
+    stateStore: boolean;
+    queue: boolean;
+    agents: boolean;
+  };
+}
+
 export class ReliableMultiAgentOrchestrator {
   private readonly coordinatorName = "coordinator";
 
@@ -40,6 +51,34 @@ export class ReliableMultiAgentOrchestrator {
 
   getMetricsSnapshot() {
     return this.deps.metrics.snapshot();
+  }
+
+  getReadiness(): ReadinessReport {
+    const dependencies = {
+      logger:
+        typeof this.deps.logger.info === "function" &&
+        typeof this.deps.logger.warn === "function" &&
+        typeof this.deps.logger.error === "function",
+      metrics:
+        typeof this.deps.metrics.increment === "function" &&
+        typeof this.deps.metrics.observeDuration === "function" &&
+        typeof this.deps.metrics.snapshot === "function",
+      stateStore:
+        typeof this.deps.stateStore.get === "function" &&
+        typeof this.deps.stateStore.upsert === "function",
+      queue:
+        typeof this.deps.queue.enqueue === "function" &&
+        typeof this.deps.queue.dequeue === "function",
+      agents:
+        Array.isArray(this.deps.agents) &&
+        this.deps.agents.length > 0 &&
+        this.deps.agents.every((agent) => typeof agent?.run === "function" && typeof agent?.name === "string")
+    };
+
+    return {
+      ready: Object.values(dependencies).every(Boolean),
+      dependencies
+    };
   }
 
   async run(taskInput: TaskInput): Promise<WorkflowResult> {

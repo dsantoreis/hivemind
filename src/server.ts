@@ -72,6 +72,16 @@ async function route(
     return;
   }
 
+  if (req.method === "GET" && req.url === "/readyz") {
+    const readiness = orchestrator.getReadiness();
+    sendJson(res, readiness.ready ? 200 : 503, {
+      status: readiness.ready ? "ready" : "not_ready",
+      ...readiness,
+      timestamp: new Date().toISOString()
+    });
+    return;
+  }
+
   if (req.method === "GET" && req.url === "/metrics") {
     sendJson(res, 200, orchestrator.getMetricsSnapshot());
     return;
@@ -160,6 +170,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
   server.listen(port, () => {
     console.log(`HTTP server listening on http://localhost:${port}`);
-    console.log("Endpoints: GET /health | GET /metrics | GET /version | POST /run");
+    console.log("Endpoints: GET /health | GET /readyz | GET /metrics | GET /version | POST /run");
   });
 }
