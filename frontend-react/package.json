@@ -1,0 +1,12 @@
+{
+  "name": "ai-agent-demo-react",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "start": "echo 'react demo placeholder'"
+  },
+  "dependencies": {
+    "react": "^18.3.1"
+  }
+}

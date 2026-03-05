@@ -1,5 +1,18 @@
 # ai-agent-demo (Enterprise Edition)
 
+> Primary stack now: **Python + FastAPI** (`python_app/`).
+> TypeScript implementation is kept as legacy reference.
+
+## Quickstart (Python/FastAPI)
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .[dev]
+pytest -q tests/test_fastapi_demo.py
+uvicorn python_app.main:app --reload
+```
+
+
 Demo comercial de **automação multi-agente confiável** focada em dores reais de clientes Upwork:
 
 - falhas intermitentes de integrações
