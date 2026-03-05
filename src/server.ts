@@ -74,6 +74,7 @@ function isTaskInput(payload: unknown): payload is TaskInput {
 
 const OPENAPI_LITE_ENDPOINTS = [
   { method: "GET", path: "/health", summary: "Status do processo" },
+  { method: "GET", path: "/pingz", summary: "Latência local do request + timestamp" },
   { method: "GET", path: "/stats", summary: "Requests agregados por endpoint + uptime" },
   { method: "GET", path: "/readyz", summary: "Prontidão do orchestrator e dependências" },
   { method: "GET", path: "/statusz", summary: "Resumo compacto: ready, uptimeSec, version" },
@@ -98,12 +99,23 @@ async function route(
   requestsByEndpoint: Map<string, number>
 ) {
   const endpoint = (req.url ?? "/").split("?")[0] || "/";
+  const startedAtNs = process.hrtime.bigint();
   requestsByEndpoint.set(endpoint, (requestsByEndpoint.get(endpoint) ?? 0) + 1);
 
   if (req.method === "GET" && req.url === "/health") {
     sendJson(res, 200, {
       status: "ok",
       uptimeSec: Math.floor((Date.now() - startedAt) / 1000),
+      timestamp: new Date().toISOString()
+    });
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/pingz") {
+    const localLatencyMs = Number(process.hrtime.bigint() - startedAtNs) / 1_000_000;
+    sendJson(res, 200, {
+      status: "ok",
+      localLatencyMs: Number(localLatencyMs.toFixed(3)),
       timestamp: new Date().toISOString()
     });
     return;
@@ -254,7 +266,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   server.listen(port, () => {
     console.log(`HTTP server listening on http://localhost:${port}`);
     console.log(
-      "Endpoints: GET /health | GET /stats | GET /readyz | GET /statusz | GET /metrics | GET /diag | GET /build-info | GET /routes-hash | GET /openapi-lite | POST /run"
+      "Endpoints: GET /health | GET /pingz | GET /stats | GET /readyz | GET /statusz | GET /metrics | GET /diag | GET /build-info | GET /routes-hash | GET /openapi-lite | POST /run"
     );
   });
 }
