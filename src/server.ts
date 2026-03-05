@@ -290,7 +290,13 @@ async function route(
     return;
   }
 
-  if (req.method === "GET" && endpoint === "/echoz") {
+  if ((req.method === "GET" || req.method === "HEAD") && endpoint === "/echoz") {
+    if (req.method === "HEAD") {
+      res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
+      res.end();
+      return;
+    }
+
     sendJson(res, 200, {
       status: "ok",
       service: "ai-agent-demo"
