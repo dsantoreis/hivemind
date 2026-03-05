@@ -22,6 +22,8 @@ interface Dependencies {
 
 export interface ReadinessReport {
   ready: boolean;
+  queueDepth: number;
+  activeAgentCount: number;
   dependencies: {
     logger: boolean;
     metrics: boolean;
@@ -99,6 +101,8 @@ export class ReliableMultiAgentOrchestrator {
 
     return {
       ready: Object.values(dependencies).every(Boolean),
+      queueDepth: this.deps.queue.size(),
+      activeAgentCount: this.deps.agents.length,
       dependencies
     };
   }
