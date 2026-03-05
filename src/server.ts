@@ -289,6 +289,7 @@ async function route(
     const resetParse = parseBooleanQueryParam(requestUrl, "reset");
     const excludeSelfParse = parseBooleanQueryParam(requestUrl, "excludeSelf");
     const endpointPrefix = requestUrl.searchParams.get("prefix")?.trim() ?? "";
+    const endpointExact = requestUrl.searchParams.get("endpoint")?.trim() ?? "";
     const minCountParse = parsePositiveIntQueryParam(requestUrl, "minCount");
     const topParse = parsePositiveIntQueryParam(requestUrl, "top");
 
@@ -319,9 +320,13 @@ async function route(
       ? new Map(Array.from(effectiveRequestsByEndpoint.entries()).filter(([path]) => path.startsWith(endpointPrefix)))
       : effectiveRequestsByEndpoint;
 
-    const filteredRequestsByEndpoint = minCount
-      ? new Map(Array.from(prefixedRequestsByEndpoint.entries()).filter(([, count]) => count >= minCount))
+    const exactRequestsByEndpoint = endpointExact.length > 0
+      ? new Map(Array.from(prefixedRequestsByEndpoint.entries()).filter(([path]) => path === endpointExact))
       : prefixedRequestsByEndpoint;
+
+    const filteredRequestsByEndpoint = minCount
+      ? new Map(Array.from(exactRequestsByEndpoint.entries()).filter(([, count]) => count >= minCount))
+      : exactRequestsByEndpoint;
 
     const sortedEndpoints = Array.from(filteredRequestsByEndpoint.entries()).sort((a, b) => {
       const countDelta = b[1] - a[1];
@@ -342,6 +347,7 @@ async function route(
       resetApplied: resetCounters,
       excludeSelfApplied: excludeSelf,
       prefixApplied: endpointPrefix.length > 0 ? endpointPrefix : null,
+      endpointApplied: endpointExact.length > 0 ? endpointExact : null,
       minCountApplied: minCount
     });
 

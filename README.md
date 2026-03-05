@@ -97,7 +97,7 @@ Endpoints:
 - `HEAD /healthz-lite` → liveness probe sem payload (rápido para balanceadores)
 - `GET /echoz` → echo mínimo (`status` + `service`)
 - `GET /pingz` → latência local do request (`localLatencyMs`) + `timestamp`
-- `GET /stats` → counters agregados de requests por endpoint + uptime (`?reset=1` reseta contadores após responder; `?top=N` retorna ranking dos N endpoints mais acessados; `?minCount=N` mantém apenas endpoints com contagem mínima N)
+- `GET /stats` → counters agregados de requests por endpoint + uptime (`?reset=1` reseta contadores após responder; `?top=N` retorna ranking dos N endpoints mais acessados; `?minCount=N` mantém apenas endpoints com contagem mínima N; `?prefix=/he` filtra por prefixo; `?endpoint=/health` filtra endpoint exato)
 - `GET /timez` → horário UTC do servidor (`serverTimeUtc`) + uptime
 - `GET /uptimez` → uptime compacto + timestamp de boot (`startedAtUtc`)
 - `GET /readyz` → prontidão do orchestrator + validação interna de dependências

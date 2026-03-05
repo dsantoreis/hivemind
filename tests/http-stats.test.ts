@@ -185,6 +185,43 @@ describe("HTTP /stats", () => {
     });
   });
 
+  it("filtra endpoint exato com ?endpoint=/health", async () => {
+    const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
+    const app = createAppServer(orchestrator);
+    runningServers.push(app);
+
+    app.server.listen(0);
+    await once(app.server, "listening");
+
+    const address = app.server.address();
+    if (!address || typeof address === "string") throw new Error("Address inválido");
+
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    await fetch(`${baseUrl}/health`);
+    await fetch(`${baseUrl}/healthz`);
+    await fetch(`${baseUrl}/health`);
+
+    const statsRes = await fetch(`${baseUrl}/stats?endpoint=/health`);
+    expect(statsRes.status).toBe(200);
+
+    const statsBody = (await statsRes.json()) as {
+      totalRequests: number;
+      uniqueEndpoints: number;
+      filteredOutEndpoints: number;
+      requestsByEndpoint: Record<string, number>;
+      endpointApplied: string | null;
+    };
+
+    expect(statsBody.endpointApplied).toBe("/health");
+    expect(statsBody.totalRequests).toBe(2);
+    expect(statsBody.uniqueEndpoints).toBe(1);
+    expect(statsBody.filteredOutEndpoints).toBe(2);
+    expect(statsBody.requestsByEndpoint).toEqual({
+      "/health": 2
+    });
+  });
+
   it("filtra endpoints por contagem mínima com ?minCount=2", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);
