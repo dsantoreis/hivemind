@@ -169,7 +169,8 @@ async function route(
   requestsByEndpoint: Map<string, number>,
   runBodyMaxBytes: number
 ) {
-  const endpoint = (req.url ?? "/").split("?")[0] || "/";
+  const requestUrl = new URL(req.url ?? "/", "http://localhost");
+  const endpoint = requestUrl.pathname || "/";
   const startedAtNs = process.hrtime.bigint();
   requestsByEndpoint.set(endpoint, (requestsByEndpoint.get(endpoint) ?? 0) + 1);
 
@@ -222,11 +223,19 @@ async function route(
   }
 
   if (req.method === "GET" && endpoint === "/stats") {
+    const resetCounters = requestUrl.searchParams.get("reset") === "1";
+
     sendJson(res, 200, {
       uptimeSec: Math.floor((Date.now() - startedAt) / 1000),
       totalRequests: Array.from(requestsByEndpoint.values()).reduce((acc, current) => acc + current, 0),
-      requestsByEndpoint: Object.fromEntries(requestsByEndpoint)
+      requestsByEndpoint: Object.fromEntries(requestsByEndpoint),
+      resetApplied: resetCounters
     });
+
+    if (resetCounters) {
+      requestsByEndpoint.clear();
+    }
+
     return;
   }
 

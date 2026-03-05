@@ -37,6 +37,7 @@ describe("HTTP /stats", () => {
       uptimeSec: number;
       totalRequests: number;
       requestsByEndpoint: Record<string, number>;
+      resetApplied: boolean;
     };
 
     expect(typeof statsBody.uptimeSec).toBe("number");
@@ -45,5 +46,51 @@ describe("HTTP /stats", () => {
     expect(statsBody.requestsByEndpoint["/metrics"]).toBe(1);
     expect(statsBody.requestsByEndpoint["/stats"]).toBe(1);
     expect(statsBody.totalRequests).toBe(4);
+    expect(statsBody.resetApplied).toBe(false);
+  });
+
+  it("reseta contadores quando chamado com ?reset=1", async () => {
+    const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
+    const app = createAppServer(orchestrator);
+    runningServers.push(app);
+
+    app.server.listen(0);
+    await once(app.server, "listening");
+
+    const address = app.server.address();
+    if (!address || typeof address === "string") throw new Error("Address inválido");
+
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    await fetch(`${baseUrl}/health`);
+    await fetch(`${baseUrl}/metrics`);
+
+    const resetRes = await fetch(`${baseUrl}/stats?reset=1`);
+    expect(resetRes.status).toBe(200);
+    const resetBody = (await resetRes.json()) as {
+      totalRequests: number;
+      requestsByEndpoint: Record<string, number>;
+      resetApplied: boolean;
+    };
+
+    expect(resetBody.resetApplied).toBe(true);
+    expect(resetBody.totalRequests).toBe(3);
+    expect(resetBody.requestsByEndpoint["/health"]).toBe(1);
+    expect(resetBody.requestsByEndpoint["/metrics"]).toBe(1);
+    expect(resetBody.requestsByEndpoint["/stats"]).toBe(1);
+
+    const afterResetRes = await fetch(`${baseUrl}/stats`);
+    expect(afterResetRes.status).toBe(200);
+    const afterResetBody = (await afterResetRes.json()) as {
+      totalRequests: number;
+      requestsByEndpoint: Record<string, number>;
+      resetApplied: boolean;
+    };
+
+    expect(afterResetBody.resetApplied).toBe(false);
+    expect(afterResetBody.totalRequests).toBe(1);
+    expect(afterResetBody.requestsByEndpoint["/stats"]).toBe(1);
+    expect(afterResetBody.requestsByEndpoint["/health"]).toBeUndefined();
+    expect(afterResetBody.requestsByEndpoint["/metrics"]).toBeUndefined();
   });
 });

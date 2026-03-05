@@ -82,7 +82,7 @@ Endpoints:
 - `GET /healthz-lite` → health mínimo (`status` + `uptimeSec`)
 - `GET /echoz` → echo mínimo (`status` + `service`)
 - `GET /pingz` → latência local do request (`localLatencyMs`) + `timestamp`
-- `GET /stats` → counters agregados de requests por endpoint + uptime
+- `GET /stats` → counters agregados de requests por endpoint + uptime (`?reset=1` reseta contadores após responder)
 - `GET /timez` → horário UTC do servidor (`serverTimeUtc`) + uptime
 - `GET /readyz` → prontidão do orchestrator + validação interna de dependências
 - `GET /readyz-lite` → prontidão compacta (`ready` + `uptimeSec`)
