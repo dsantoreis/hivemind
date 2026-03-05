@@ -412,6 +412,53 @@ describe("HTTP endpoints", () => {
     expect(body.detail).toContain("verbose must be a boolean");
   });
 
+  it("expõe rotas em /routes-hash quando includeRoutes=true", async () => {
+    const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
+    const app = createAppServer(orchestrator);
+    runningServers.push(app);
+
+    app.server.listen(0);
+    await once(app.server, "listening");
+
+    const address = app.server.address();
+    if (!address || typeof address === "string") throw new Error("Address inválido");
+
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    const res = await fetch(`${baseUrl}/routes-hash?includeRoutes=true`);
+    expect(res.status).toBe(200);
+
+    const body = (await res.json()) as { algorithm: string; hash: string; routeCount: number; routes: string[] };
+    expect(body.algorithm).toBe("sha256");
+    expect(body.hash).toMatch(/^[0-9a-f]{64}$/i);
+    expect(body.routeCount).toBeGreaterThan(0);
+    expect(body.routes.length).toBe(body.routeCount);
+    expect(body.routes).toContain("GET /health");
+    expect(body.routes).toContain("POST /run");
+  });
+
+  it("valida includeRoutes em /routes-hash", async () => {
+    const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
+    const app = createAppServer(orchestrator);
+    runningServers.push(app);
+
+    app.server.listen(0);
+    await once(app.server, "listening");
+
+    const address = app.server.address();
+    if (!address || typeof address === "string") throw new Error("Address inválido");
+
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    const res = await fetch(`${baseUrl}/routes-hash?includeRoutes=maybe`);
+    expect(res.status).toBe(400);
+
+    const body = (await res.json()) as { status: string; message: string; detail: string };
+    expect(body.status).toBe("error");
+    expect(body.message).toBe("invalid_query_param");
+    expect(body.detail).toContain("includeRoutes must be a boolean");
+  });
+
   it("retorna 415 quando POST /run não recebe content-type JSON", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);

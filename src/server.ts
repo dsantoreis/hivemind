@@ -476,10 +476,28 @@ async function route(
   }
 
   if (req.method === "GET" && endpoint === "/routes-hash") {
-    sendJson(res, 200, {
+    const includeRoutesParam = parseBooleanQueryParam(requestUrl, "includeRoutes");
+    if (includeRoutesParam.error) {
+      sendJson(res, 400, { status: "error", message: "invalid_query_param", detail: includeRoutesParam.error });
+      return;
+    }
+
+    const payload: {
+      algorithm: "sha256";
+      hash: string;
+      routeCount?: number;
+      routes?: string[];
+    } = {
       algorithm: "sha256",
       hash: ROUTES_SIGNATURE_SHA256
-    });
+    };
+
+    if (includeRoutesParam.value === true) {
+      payload.routeCount = ROUTES_SIGNATURE_ENTRIES.length;
+      payload.routes = ROUTES_SIGNATURE_ENTRIES;
+    }
+
+    sendJson(res, 200, payload);
     return;
   }
 
