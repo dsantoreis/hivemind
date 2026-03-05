@@ -18,7 +18,7 @@ Demo comercial de **automação multi-agente confiável** focada em dores reais 
 - **Logs estruturados (JSON)**
 - **Métricas básicas** (counters + duração média/máxima)
 - **Persistência simples** em JSON local
-- **Endpoints HTTP de observabilidade** (`/health`, `/alivez`, `/healthz-lite`, `/echoz`, `/pingz`, `/stats`, `/timez`, `/readyz`, `/readyz-lite`, `/statusz`, `/versionz`, `/meta-lite`, `/metrics`, `/diag`, `/build-info`, `/build-lite` e `/openapi-lite`)
+- **Endpoints HTTP de observabilidade** (`/health`, `/alivez`, `/healthz-lite`, `/echoz`, `/pingz`, `/stats`, `/timez`, `/uptimez`, `/readyz`, `/readyz-lite`, `/statusz`, `/versionz`, `/meta-lite`, `/metrics`, `/diag`, `/build-info`, `/build-lite` e `/openapi-lite`)
 - **Testes unitários, integração e cenários de falha**
 
 ## Casos de uso comerciais (Upwork-ready)
@@ -84,6 +84,7 @@ Endpoints:
 - `GET /pingz` → latência local do request (`localLatencyMs`) + `timestamp`
 - `GET /stats` → counters agregados de requests por endpoint + uptime (`?reset=1` reseta contadores após responder)
 - `GET /timez` → horário UTC do servidor (`serverTimeUtc`) + uptime
+- `GET /uptimez` → uptime compacto + timestamp de boot (`startedAtUtc`)
 - `GET /readyz` → prontidão do orchestrator + validação interna de dependências
 - `GET /readyz-lite` → prontidão compacta (`ready` + `uptimeSec`)
 - `GET /statusz` → resumo compacto (`ready`, `uptimeSec`, `version`)
@@ -107,6 +108,7 @@ curl -s http://localhost:3000/echoz
 curl -s http://localhost:3000/pingz
 curl -s http://localhost:3000/stats
 curl -s http://localhost:3000/timez
+curl -s http://localhost:3000/uptimez
 curl -s http://localhost:3000/readyz
 curl -s http://localhost:3000/readyz-lite
 curl -s http://localhost:3000/statusz
@@ -150,14 +152,14 @@ RETRY_ATTEMPTS=3 AGENT_TIMEOUT_MS=500 npm run demo
 |---|---|
 | `./scripts/setup.sh` | Bootstrap local (checks + deps + verify) |
 | `npm run demo` | Executa a demo principal |
-| `npm run serve` | Sobe servidor HTTP com `/health`, `/alivez`, `/healthz-lite`, `/echoz`, `/pingz`, `/stats`, `/timez`, `/readyz`, `/readyz-lite`, `/statusz`, `/versionz`, `/meta-lite`, `/metrics`, `/diag`, `/build-info`, `/build-lite`, `/routes-hash` e `/openapi-lite` |
+| `npm run serve` | Sobe servidor HTTP com `/health`, `/alivez`, `/healthz-lite`, `/echoz`, `/pingz`, `/stats`, `/timez`, `/uptimez`, `/readyz`, `/readyz-lite`, `/statusz`, `/versionz`, `/meta-lite`, `/metrics`, `/diag`, `/build-info`, `/build-lite`, `/routes-hash` e `/openapi-lite` |
 | `./examples/run-enterprise-demo.sh` | Exemplo executável com env enterprise |
 | `npm run lint` | Validação TypeScript sem gerar artefatos |
 | `npm run test` | Roda toda a suíte de testes |
 | `npm run test:unit` | Roda testes unitários da orquestração |
 | `npm run test:smoke` | Roda smoke test da CLI |
 | `npm run test:basic` | Valida o script de exemplo executável |
-| `npm run test:http` | Valida endpoints HTTP, incluindo `/echoz`, `/stats` e `/timez` (service/counters/hora UTC + uptime) |
+| `npm run test:http` | Valida endpoints HTTP, incluindo `/echoz`, `/stats`, `/timez` e `/uptimez` (service/counters/hora UTC + boot timestamp) |
 | `npm run verify:quick` | Verificação rápida: lint + unit + smoke + basic + http |
 | `npm run verify:full` | Gate final pré-publicação: lint + unit + smoke + http + build |
 | `npm run build` | Compila o projeto para `dist/` |
@@ -189,7 +191,7 @@ src/
   orchestrator.ts   # coordenador confiável
   config.ts         # env config
   index.ts          # entrypoint demo
-  server.ts         # HTTP endpoints /health, /alivez, /healthz-lite, /echoz, /pingz, /stats, /timez, /readyz, /readyz-lite, /statusz, /versionz, /meta-lite, /metrics, /diag, /build-info, /build-lite e /openapi-lite
+  server.ts         # HTTP endpoints /health, /alivez, /healthz-lite, /echoz, /pingz, /stats, /timez, /uptimez, /readyz, /readyz-lite, /statusz, /versionz, /meta-lite, /metrics, /diag, /build-info, /build-lite e /openapi-lite
 tests/
   orchestrator.test.ts
   cli.smoke.test.ts

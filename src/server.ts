@@ -141,6 +141,7 @@ const OPENAPI_LITE_ENDPOINTS = [
   { method: "GET", path: "/pingz", summary: "Latência local do request + timestamp" },
   { method: "GET", path: "/stats", summary: "Requests agregados por endpoint + uptime" },
   { method: "GET", path: "/timez", summary: "Hora UTC do servidor + uptime" },
+  { method: "GET", path: "/uptimez", summary: "Uptime compacto com startedAtUtc" },
   { method: "GET", path: "/readyz", summary: "Prontidão do orchestrator e dependências" },
   { method: "GET", path: "/readyz-lite", summary: "Prontidão compacta: ready + uptimeSec" },
   { method: "GET", path: "/statusz", summary: "Resumo compacto: ready, uptimeSec, version" },
@@ -243,6 +244,14 @@ async function route(
     sendJson(res, 200, {
       serverTimeUtc: new Date().toISOString(),
       uptimeSec: Math.floor((Date.now() - startedAt) / 1000)
+    });
+    return;
+  }
+
+  if (req.method === "GET" && endpoint === "/uptimez") {
+    sendJson(res, 200, {
+      uptimeSec: Math.floor((Date.now() - startedAt) / 1000),
+      startedAtUtc: new Date(startedAt).toISOString()
     });
     return;
   }
@@ -458,7 +467,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   server.listen(port, () => {
     console.log(`HTTP server listening on http://localhost:${port}`);
     console.log(
-      "Endpoints: GET /health | GET /alivez | GET /healthz-lite | GET /echoz | GET /pingz | GET /stats | GET /timez | GET /readyz | GET /readyz-lite | GET /statusz | GET /versionz | GET /meta-lite | GET /metrics | GET /diag | GET /diag-lite | GET /build-info | GET /build-lite | GET /routes-hash | GET /openapi-lite | POST /run"
+      "Endpoints: GET /health | GET /alivez | GET /healthz-lite | GET /echoz | GET /pingz | GET /stats | GET /timez | GET /uptimez | GET /readyz | GET /readyz-lite | GET /statusz | GET /versionz | GET /meta-lite | GET /metrics | GET /diag | GET /diag-lite | GET /build-info | GET /build-lite | GET /routes-hash | GET /openapi-lite | POST /run"
     );
   });
 }
