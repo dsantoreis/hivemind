@@ -14,7 +14,7 @@ afterEach(async () => {
 });
 
 describe("HTTP endpoints", () => {
-  it("expõe /health, /pingz, /timez, /readyz, /statusz, /metrics, /diag, /build-info, /routes-hash e /openapi-lite", async () => {
+  it("expõe /health, /healthz-lite, /pingz, /timez, /readyz, /statusz, /metrics, /diag, /build-info, /routes-hash e /openapi-lite", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);
     runningServers.push(app);
@@ -32,6 +32,13 @@ describe("HTTP endpoints", () => {
     const healthBody = (await healthRes.json()) as { status: string; uptimeSec: number };
     expect(healthBody.status).toBe("ok");
     expect(typeof healthBody.uptimeSec).toBe("number");
+
+    const healthzLiteRes = await fetch(`${baseUrl}/healthz-lite`);
+    expect(healthzLiteRes.status).toBe(200);
+    const healthzLiteBody = (await healthzLiteRes.json()) as { status: string; uptimeSec: number };
+    expect(healthzLiteBody.status).toBe("ok");
+    expect(typeof healthzLiteBody.uptimeSec).toBe("number");
+    expect(healthzLiteBody.uptimeSec).toBeGreaterThanOrEqual(0);
 
     const pingzRes = await fetch(`${baseUrl}/pingz`);
     expect(pingzRes.status).toBe(200);
@@ -127,6 +134,7 @@ describe("HTTP endpoints", () => {
     expect(openApiLiteBody.endpoints).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ method: "GET", path: "/health" }),
+        expect.objectContaining({ method: "GET", path: "/healthz-lite" }),
         expect.objectContaining({ method: "GET", path: "/pingz" }),
         expect.objectContaining({ method: "GET", path: "/timez" }),
         expect.objectContaining({ method: "GET", path: "/statusz" }),
@@ -140,6 +148,56 @@ describe("HTTP endpoints", () => {
       .update(openApiLiteBody.endpoints.map(({ method, path }) => `${method} ${path}`).sort().join("\n"))
       .digest("hex");
     expect(routesHashBody.hash).toBe(expectedRoutesHash);
+  });
+
+  it("aceita querystring em endpoints GET", async () => {
+    const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
+    const app = createAppServer(orchestrator);
+    runningServers.push(app);
+
+    app.server.listen(0);
+    await once(app.server, "listening");
+
+    const address = app.server.address();
+    if (!address || typeof address === "string") throw new Error("Address inválido");
+
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    const healthRes = await fetch(`${baseUrl}/health?check=1`);
+    expect(healthRes.status).toBe(200);
+
+    const statsRes = await fetch(`${baseUrl}/stats`);
+    const statsBody = (await statsRes.json()) as { requestsByEndpoint: Record<string, number> };
+    expect(statsBody.requestsByEndpoint["/health"]).toBe(1);
+  });
+
+  it("retorna 400 para JSON malformado no POST /run", async () => {
+    const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
+    const app = createAppServer(orchestrator);
+    runningServers.push(app);
+
+    app.server.listen(0);
+    await once(app.server, "listening");
+
+    const address = app.server.address();
+    if (!address || typeof address === "string") throw new Error("Address inválido");
+
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    const runRes = await fetch(`${baseUrl}/run`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: '{"goal": "incompleto"'
+    });
+
+    expect(runRes.status).toBe(400);
+
+    const body = (await runRes.json()) as { status: string; message: string; traceId: string };
+    expect(body.status).toBe("error");
+    expect(body.message).toBe("invalid_json_body");
+    expect(body.traceId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    );
   });
 
   it("executa workflow no POST /run e retorna traceId", async () => {

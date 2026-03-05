@@ -18,7 +18,7 @@ Demo comercial de **automação multi-agente confiável** focada em dores reais 
 - **Logs estruturados (JSON)**
 - **Métricas básicas** (counters + duração média/máxima)
 - **Persistência simples** em JSON local
-- **Endpoints HTTP de observabilidade** (`/health`, `/pingz`, `/stats`, `/timez`, `/readyz`, `/statusz`, `/metrics`, `/diag`, `/build-info` e `/openapi-lite`)
+- **Endpoints HTTP de observabilidade** (`/health`, `/healthz-lite`, `/pingz`, `/stats`, `/timez`, `/readyz`, `/statusz`, `/metrics`, `/diag`, `/build-info` e `/openapi-lite`)
 - **Testes unitários, integração e cenários de falha**
 
 ## Casos de uso comerciais (Upwork-ready)
@@ -76,6 +76,7 @@ npm run serve
 
 Endpoints:
 - `GET /health` → status do processo
+- `GET /healthz-lite` → health mínimo (`status` + `uptimeSec`)
 - `GET /pingz` → latência local do request (`localLatencyMs`) + `timestamp`
 - `GET /stats` → counters agregados de requests por endpoint + uptime
 - `GET /timez` → horário UTC do servidor (`serverTimeUtc`) + uptime
@@ -92,6 +93,7 @@ Validação rápida:
 
 ```bash
 curl -s http://localhost:3000/health
+curl -s http://localhost:3000/healthz-lite
 curl -s http://localhost:3000/pingz
 curl -s http://localhost:3000/stats
 curl -s http://localhost:3000/timez
@@ -134,7 +136,7 @@ RETRY_ATTEMPTS=3 AGENT_TIMEOUT_MS=500 npm run demo
 |---|---|
 | `./scripts/setup.sh` | Bootstrap local (checks + deps + verify) |
 | `npm run demo` | Executa a demo principal |
-| `npm run serve` | Sobe servidor HTTP com `/health`, `/pingz`, `/stats`, `/timez`, `/readyz`, `/statusz`, `/metrics`, `/diag`, `/build-info`, `/routes-hash` e `/openapi-lite` |
+| `npm run serve` | Sobe servidor HTTP com `/health`, `/healthz-lite`, `/pingz`, `/stats`, `/timez`, `/readyz`, `/statusz`, `/metrics`, `/diag`, `/build-info`, `/routes-hash` e `/openapi-lite` |
 | `./examples/run-enterprise-demo.sh` | Exemplo executável com env enterprise |
 | `npm run lint` | Validação TypeScript sem gerar artefatos |
 | `npm run test` | Roda toda a suíte de testes |
@@ -173,7 +175,7 @@ src/
   orchestrator.ts   # coordenador confiável
   config.ts         # env config
   index.ts          # entrypoint demo
-  server.ts         # HTTP endpoints /health, /pingz, /stats, /timez, /readyz, /statusz, /metrics, /diag, /build-info e /openapi-lite
+  server.ts         # HTTP endpoints /health, /healthz-lite, /pingz, /stats, /timez, /readyz, /statusz, /metrics, /diag, /build-info e /openapi-lite
 tests/
   orchestrator.test.ts
   cli.smoke.test.ts
