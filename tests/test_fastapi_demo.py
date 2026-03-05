@@ -9,13 +9,20 @@ def test_health() -> None:
     assert r.json()['stack'] == 'python-fastapi'
 
 
-def test_run() -> None:
+def test_run_orchestrates_two_simulated_workers() -> None:
     client = TestClient(app)
     r = client.post('/run', json={'task': 'improve onboarding'})
     assert r.status_code == 200
+
     body = r.json()
-    assert 'Plan:' in body['plan']
-    assert 'Recommended approach' in body['result']
+    assert body['task'] == 'improve onboarding'
+    orchestration = body['orchestration']
+
+    assert orchestration['coordinator'] == 'main-coordinator'
+    assert len(orchestration['workers']) == 2
+    assert orchestration['workers'][0]['worker'] == 'discovery'
+    assert orchestration['workers'][1]['worker'] == 'delivery'
+    assert 'Orquestração concluída' in orchestration['summary']
 
 
 def test_run_rejects_too_short_task() -> None:
@@ -26,11 +33,11 @@ def test_run_rejects_too_short_task() -> None:
     assert body['detail'][0]['type'] == 'string_too_short'
 
 
-def test_run_trims_task_before_building_plan() -> None:
+def test_run_trims_task_before_orchestrating() -> None:
     client = TestClient(app)
     r = client.post('/run', json={'task': '   improve onboarding   '})
     assert r.status_code == 200
-    assert "'improve onboarding'" in r.json()['plan']
+    assert r.json()['task'] == 'improve onboarding'
 
 
 def test_run_rejects_whitespace_only_task() -> None:

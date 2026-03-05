@@ -12,6 +12,23 @@ pytest -q tests/test_fastapi_demo.py
 uvicorn python_app.main:app --reload
 ```
 
+## Demo mínima de orquestração multi-agent
+- **Coordenador**: `coordinator_run` (em `python_app/main.py`)
+- **Worker 1 (simulado)**: `worker_discovery`
+- **Worker 2 (simulado)**: `worker_delivery`
+
+Execução rápida:
+```bash
+curl -s -X POST http://127.0.0.1:8000/run \
+  -H 'content-type: application/json' \
+  -d '{"task":"montar plano de onboarding"}' | jq
+```
+
+Saída inclui:
+- tarefa normalizada
+- trilha de orquestração (`discovery -> delivery`)
+- resultado consolidado do coordenador
+
 
 Demo comercial de **automação multi-agente confiável** focada em dores reais de clientes Upwork:
 
