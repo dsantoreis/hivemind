@@ -1,11 +1,18 @@
 from fastapi import FastAPI
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 app = FastAPI(title="ai-agent-demo", version="0.2.0")
 
 
 class RunRequest(BaseModel):
     task: str = Field(min_length=3, description="Task goal with at least 3 chars")
+
+    @field_validator("task", mode="before")
+    @classmethod
+    def normalize_task(cls, value: str) -> str:
+        if isinstance(value, str):
+            return value.strip()
+        return value
 
 
 @app.get("/health")
