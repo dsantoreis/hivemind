@@ -18,7 +18,7 @@ Demo comercial de **automação multi-agente confiável** focada em dores reais 
 - **Logs estruturados (JSON)**
 - **Métricas básicas** (counters + duração média/máxima)
 - **Persistência simples** em JSON local
-- **Endpoints HTTP de observabilidade** (`/health`, `/stats`, `/readyz`, `/metrics`, `/diag` e `/version`)
+- **Endpoints HTTP de observabilidade** (`/health`, `/stats`, `/readyz`, `/metrics`, `/diag` e `/build-info`)
 - **Testes unitários, integração e cenários de falha**
 
 ## Casos de uso comerciais (Upwork-ready)
@@ -80,7 +80,7 @@ Endpoints:
 - `GET /readyz` → prontidão do orchestrator + validação interna de dependências
 - `GET /metrics` → snapshot das métricas atuais
 - `GET /diag` → diagnóstico do orchestrator (config/runtime/métricas sem segredos)
-- `GET /version` → metadados de build (`commitHash` + `buildTime`)
+- `GET /build-info` → metadados de build (`version`, `commit`, `buildTime`, `nodeVersion`)
 - `POST /run` → executa workflow mínimo com payload JSON e retorna `traceId`
 
 Validação rápida:
@@ -91,7 +91,7 @@ curl -s http://localhost:3000/stats
 curl -s http://localhost:3000/readyz
 curl -s http://localhost:3000/metrics
 curl -s http://localhost:3000/diag
-curl -s http://localhost:3000/version
+curl -s http://localhost:3000/build-info
 ```
 
 Exemplo `POST /run`:
@@ -124,7 +124,7 @@ RETRY_ATTEMPTS=3 AGENT_TIMEOUT_MS=500 npm run demo
 |---|---|
 | `./scripts/setup.sh` | Bootstrap local (checks + deps + verify) |
 | `npm run demo` | Executa a demo principal |
-| `npm run serve` | Sobe servidor HTTP com `/health`, `/stats`, `/readyz`, `/metrics`, `/diag` e `/version` |
+| `npm run serve` | Sobe servidor HTTP com `/health`, `/stats`, `/readyz`, `/metrics`, `/diag` e `/build-info` |
 | `./examples/run-enterprise-demo.sh` | Exemplo executável com env enterprise |
 | `npm run lint` | Validação TypeScript sem gerar artefatos |
 | `npm run test` | Roda toda a suíte de testes |
@@ -163,7 +163,7 @@ src/
   orchestrator.ts   # coordenador confiável
   config.ts         # env config
   index.ts          # entrypoint demo
-  server.ts         # HTTP endpoints /health, /stats, /readyz, /metrics, /diag e /version
+  server.ts         # HTTP endpoints /health, /stats, /readyz, /metrics, /diag e /build-info
 tests/
   orchestrator.test.ts
   cli.smoke.test.ts

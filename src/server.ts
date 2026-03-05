@@ -1,6 +1,7 @@
 import { createServer as createHttpServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { randomUUID } from "node:crypto";
 import { execSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { ReliableMultiAgentOrchestrator } from "./orchestrator.js";
 import type { TaskInput } from "./types.js";
 
@@ -24,6 +25,21 @@ function resolveBuildTime(): string {
   const fromEnv = process.env.BUILD_TIME?.trim();
   if (fromEnv) return fromEnv;
   return new Date().toISOString();
+}
+
+function resolveVersion(): string {
+  const fromEnv = process.env.APP_VERSION?.trim() ?? process.env.npm_package_version?.trim();
+  if (fromEnv) return fromEnv;
+
+  try {
+    const packageJsonPath = new URL("../package.json", import.meta.url);
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8")) as { version?: string };
+    if (packageJson.version?.trim()) return packageJson.version.trim();
+  } catch {
+    // ignore and fallback
+  }
+
+  return "unknown";
 }
 
 function sendJson(res: ServerResponse, statusCode: number, payload: unknown) {
@@ -61,7 +77,7 @@ async function route(
   res: ServerResponse,
   orchestrator: ReliableMultiAgentOrchestrator,
   startedAt: number,
-  buildInfo: { commitHash: string; buildTime: string },
+  buildInfo: { version: string; commit: string; buildTime: string; nodeVersion: string },
   requestsByEndpoint: Map<string, number>
 ) {
   const endpoint = (req.url ?? "/").split("?")[0] || "/";
@@ -105,11 +121,8 @@ async function route(
     return;
   }
 
-  if (req.method === "GET" && req.url === "/version") {
-    sendJson(res, 200, {
-      commitHash: buildInfo.commitHash,
-      buildTime: buildInfo.buildTime
-    });
+  if (req.method === "GET" && req.url === "/build-info") {
+    sendJson(res, 200, buildInfo);
     return;
   }
 
@@ -155,8 +168,10 @@ async function route(
 export function createAppServer(orchestrator: ReliableMultiAgentOrchestrator): AppServer {
   const startedAt = Date.now();
   const buildInfo = {
-    commitHash: resolveCommitHash(),
-    buildTime: resolveBuildTime()
+    version: resolveVersion(),
+    commit: resolveCommitHash(),
+    buildTime: resolveBuildTime(),
+    nodeVersion: process.version
   };
 
   const requestsByEndpoint = new Map<string, number>();
@@ -190,6 +205,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
   server.listen(port, () => {
     console.log(`HTTP server listening on http://localhost:${port}`);
-    console.log("Endpoints: GET /health | GET /stats | GET /readyz | GET /metrics | GET /diag | GET /version | POST /run");
+    console.log("Endpoints: GET /health | GET /stats | GET /readyz | GET /metrics | GET /diag | GET /build-info | POST /run");
   });
 }

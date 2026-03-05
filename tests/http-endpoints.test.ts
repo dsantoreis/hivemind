@@ -13,7 +13,7 @@ afterEach(async () => {
 });
 
 describe("HTTP endpoints", () => {
-  it("expõe /health, /readyz, /metrics, /diag e /version", async () => {
+  it("expõe /health, /readyz, /metrics, /diag e /build-info", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);
     runningServers.push(app);
@@ -70,11 +70,18 @@ describe("HTTP endpoints", () => {
 
     expect("STATE_FILE" in diagBody.config).toBe(false);
 
-    const versionRes = await fetch(`${baseUrl}/version`);
-    expect(versionRes.status).toBe(200);
-    const versionBody = (await versionRes.json()) as { commitHash: string; buildTime: string };
-    expect(versionBody.commitHash).toMatch(/^[0-9a-f]{7,40}$|^unknown$/i);
-    expect(Number.isNaN(Date.parse(versionBody.buildTime))).toBe(false);
+    const buildInfoRes = await fetch(`${baseUrl}/build-info`);
+    expect(buildInfoRes.status).toBe(200);
+    const buildInfoBody = (await buildInfoRes.json()) as {
+      version: string;
+      commit: string;
+      buildTime: string;
+      nodeVersion: string;
+    };
+    expect(buildInfoBody.version).toMatch(/^\d+\.\d+\.\d+(-.+)?$|^unknown$/);
+    expect(buildInfoBody.commit).toMatch(/^[0-9a-f]{7,40}$|^unknown$/i);
+    expect(Number.isNaN(Date.parse(buildInfoBody.buildTime))).toBe(false);
+    expect(buildInfoBody.nodeVersion).toMatch(/^v\d+\.\d+\.\d+/);
   });
 
   it("executa workflow no POST /run e retorna traceId", async () => {
