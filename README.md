@@ -1,19 +1,17 @@
 # ai-agent-demo
 
-Demo funcional de **orquestração multi-agente** em TypeScript.
+Demo funcional em TypeScript de **orquestração multi-agente** com:
 
-> Repositório local inicializado como privado (`"private": true` no `package.json`).
+- 1 **coordenador** (`MultiAgentOrchestrator`)
+- 2 **workers** (`worker-research` e `worker-build`)
 
-## O que o demo faz
+> Repositório local privado (`"private": true` no `package.json`).
 
-Pipeline de 4 agentes simulados:
+## Como funciona
 
-1. `planner` cria o plano
-2. `researcher` enriquece o contexto
-3. `coder` propõe implementação
-4. `reviewer` revisa e consolida
-
-A classe `MultiAgentOrchestrator` coordena a execução sequencial e retorna resposta final consolidada.
+1. Coordenador recebe o objetivo (`Task`)
+2. Coordenador dispara os 2 workers em paralelo (`Promise.all`)
+3. Coordenador consolida os outputs e retorna resposta final
 
 ## Requisitos
 
@@ -26,7 +24,7 @@ A classe `MultiAgentOrchestrator` coordena a execução sequencial e retorna res
 npm install
 ```
 
-## Executar demo
+## Executar localmente
 
 ```bash
 npm run demo
@@ -34,7 +32,7 @@ npm run demo
 ./scripts/run-demo.sh
 ```
 
-## Rodar testes
+## Testes básicos
 
 ```bash
 npm test
@@ -44,17 +42,11 @@ npm test
 
 ```text
 src/
-  agents.ts        # agentes simulados
-  orchestrator.ts  # orquestrador principal
-  index.ts         # ponto de entrada executável
+  agents.ts        # 2 workers simulados
+  orchestrator.ts  # coordenador
+  index.ts         # entrada executável
 tests/
   orchestrator.test.ts
 scripts/
   run-demo.sh
 ```
-
-## Próximos passos sugeridos
-
-- Paralelizar agentes independentes
-- Adicionar retries/timeouts por agente
-- Persistir traces de execução para observabilidade
