@@ -16,6 +16,7 @@ export default defineConfig({
           items: [
             { label: 'Getting Started', link: '/getting-started' },
             { label: 'Architecture', link: '/architecture' },
+            { label: 'API Reference', link: '/api-reference' },
             { label: 'Deployment', link: '/deployment' }
           ]
         },
