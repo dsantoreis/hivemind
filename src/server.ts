@@ -528,7 +528,13 @@ async function route(
     return;
   }
 
-  if (req.method === "GET" && endpoint === "/metrics") {
+  if ((req.method === "GET" || req.method === "HEAD") && endpoint === "/metrics") {
+    if (req.method === "HEAD") {
+      res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
+      res.end();
+      return;
+    }
+
     sendJson(res, 200, orchestrator.getMetricsSnapshot());
     return;
   }
@@ -538,7 +544,13 @@ async function route(
     return;
   }
 
-  if (req.method === "GET" && endpoint === "/diag-lite") {
+  if ((req.method === "GET" || req.method === "HEAD") && endpoint === "/diag-lite") {
+    if (req.method === "HEAD") {
+      res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
+      res.end();
+      return;
+    }
+
     const diag = orchestrator.getDiagnosticSummary();
     sendJson(res, 200, {
       ready: diag.runtime.readiness.ready,
@@ -548,7 +560,13 @@ async function route(
     return;
   }
 
-  if (req.method === "GET" && endpoint === "/build-info") {
+  if ((req.method === "GET" || req.method === "HEAD") && endpoint === "/build-info") {
+    if (req.method === "HEAD") {
+      res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
+      res.end();
+      return;
+    }
+
     sendJson(res, 200, buildInfo);
     return;
   }

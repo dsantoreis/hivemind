@@ -729,6 +729,38 @@ describe("HTTP endpoints", () => {
     expect(statsBody.requestsByEndpoint["/meta-lite"]).toBe(1);
   });
 
+  it("aceita HEAD em /metrics, /diag-lite e /build-info para probes sem payload", async () => {
+    const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
+    const app = createAppServer(orchestrator);
+    runningServers.push(app);
+
+    app.server.listen(0);
+    await once(app.server, "listening");
+
+    const address = app.server.address();
+    if (!address || typeof address === "string") throw new Error("Address inválido");
+
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    const metricsHeadRes = await fetch(`${baseUrl}/metrics`, { method: "HEAD" });
+    expect(metricsHeadRes.status).toBe(200);
+    expect(await metricsHeadRes.text()).toBe("");
+
+    const diagLiteHeadRes = await fetch(`${baseUrl}/diag-lite`, { method: "HEAD" });
+    expect(diagLiteHeadRes.status).toBe(200);
+    expect(await diagLiteHeadRes.text()).toBe("");
+
+    const buildInfoHeadRes = await fetch(`${baseUrl}/build-info`, { method: "HEAD" });
+    expect(buildInfoHeadRes.status).toBe(200);
+    expect(await buildInfoHeadRes.text()).toBe("");
+
+    const statsRes = await fetch(`${baseUrl}/stats`);
+    const statsBody = (await statsRes.json()) as { requestsByEndpoint: Record<string, number> };
+    expect(statsBody.requestsByEndpoint["/metrics"]).toBe(1);
+    expect(statsBody.requestsByEndpoint["/diag-lite"]).toBe(1);
+    expect(statsBody.requestsByEndpoint["/build-info"]).toBe(1);
+  });
+
   it("retorna 415 quando POST /run não recebe content-type JSON", async () => {
     const orchestrator = ReliableMultiAgentOrchestrator.fromEnv();
     const app = createAppServer(orchestrator);
