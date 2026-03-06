@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hivemind-docs
+  labels:
+    app: hivemind-docs
+spec:
+  selector:
+    app: hivemind-docs
+  ports:
+    - name: http
+      port: 80
+      targetPort: 4321
+      protocol: TCP
+  type: ClusterIP

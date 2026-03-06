@@ -1,11 +1,11 @@
 ---
-title: API Reference
+title: API
 ---
 
-- `POST /auth/token`
-- `GET /health`
-- `GET /metrics`
-- `POST /v1/research/workflows`
-- `GET /v1/research/workflows`
-- `GET /v1/research/workflows/{workflow_id}`
-- `GET /v1/research/stream`
+## Endpoints
+
+Documente aqui os endpoints públicos e contratos.
+
+- Auth
+- Jobs
+- Healthcheck
