@@ -84,6 +84,7 @@ Published docs: https://dsantoreis.github.io/hivemind/
 Docs deployment is automated with GitHub Pages via `.github/workflows/docs.yml`.
 
 - Local: `cd docs-site && npm install && npm run dev`
+- Build: `cd docs-site && npm run build`
 - Published: https://dsantoreis.github.io/hivemind/ (GitHub Pages via `.github/workflows/docs.yml`)
 
 ## Benchmarks, cobertura e resilience
