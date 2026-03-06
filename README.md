@@ -27,7 +27,7 @@ Most agent demos break when they hit real usage patterns. Teams need authenticat
 - Kubernetes deployment, service, autoscaling, and ingress manifests
 - Quality gates in CI for lint, tests, and coverage over 80%
 
-## Quickstart
+## Quickstart (3 comandos)
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
