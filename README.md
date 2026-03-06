@@ -27,7 +27,7 @@ Most agent demos break when they hit real usage patterns in production. Teams ne
 - Kubernetes deployment, service, autoscaling, and ingress manifests
 - Quality gates in CI for lint, tests, and coverage over 80%
 
-## Quickstart (3 comandos)
+## Quickstart (3 comandos, ambiente local)
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
