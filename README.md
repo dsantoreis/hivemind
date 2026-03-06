@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/dsantoreis/hivemind/actions/workflows/ci.yml/badge.svg)](https://github.com/dsantoreis/hivemind/actions/workflows/ci.yml)
 [![Docs](https://github.com/dsantoreis/hivemind/actions/workflows/docs.yml/badge.svg)](https://github.com/dsantoreis/hivemind/actions/workflows/docs.yml)
-[![Coverage](https://img.shields.io/badge/coverage-%3E80%25-brightgreen)](#quality-gates)
+[![Coverage >= 80%](https://img.shields.io/badge/coverage-80%25%2B-brightgreen)](#quality-gates)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 
 Production-ready multi-agent orchestration for ops teams that need reliable routing and observability under load.
