@@ -12,6 +12,7 @@
     "verify:quick": "npm run lint && npm run test:unit && npm run test:smoke && npm run test:basic && npm run test:http",
     "verify:full": "npm run lint && npm run test:unit && npm run test:smoke && npm run test:http && npm run build",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:unit": "vitest run tests/orchestrator.test.ts",
     "test:smoke": "vitest run tests/cli.smoke.test.ts",
     "test:basic": "vitest run tests/basic-example.test.ts",
@@ -28,6 +29,7 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^24.5.2",
+    "@vitest/coverage-v8": "^3.2.4",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
