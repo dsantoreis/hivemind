@@ -1,6 +1,18 @@
-# Conversão para Astro Starlight
+# Hivemind Docs — Conversão para Astro Starlight
+
+![Hero](./public/assets/hero.svg)
+
+![Demo GIF](./public/assets/demo.gif)
 
 Este diretório (`docs-site/`) usa **Astro + Starlight** para documentação estática.
+
+## Quickstart
+
+```bash
+npm ci
+npm run dev
+# http://localhost:4321
+```
 
 ## Estrutura
 
@@ -18,19 +30,17 @@ Este diretório (`docs-site/`) usa **Astro + Starlight** para documentação est
    - `npm ci`
    - `npm run build`
 
-## Publicação
-
-### Docker
+## Docker
 
 ```bash
 docker build -t hivemind-docs:latest .
 docker run --rm -p 4321:4321 hivemind-docs:latest
 ```
 
-### Kubernetes
+## Kubernetes
 
 ```bash
 kubectl apply -f k8s/
 ```
 
-Defina a variável `DOCS_HOST` no Ingress (`docs.example.com`) antes do apply em produção.
+Defina host real no `k8s/ingress.yaml` antes do deploy em produção.
