@@ -48,3 +48,9 @@ Defina host real no `k8s/ingress.yaml` antes do deploy em produção.
 ## CI
 
 Workflow em `.github/workflows/docs-site.yml` valida `npm ci` + `npm run build` em push/PR.
+
+### Compose
+
+```bash
+docker compose up --build
+```
