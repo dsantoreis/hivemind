@@ -430,9 +430,17 @@ async function route(
     return;
   }
 
-  if (req.method === "GET" && endpoint === "/readyz") {
+  if ((req.method === "GET" || req.method === "HEAD") && endpoint === "/readyz") {
     const readiness = orchestrator.getReadiness();
-    sendJson(res, readiness.ready ? 200 : 503, {
+    const statusCode = readiness.ready ? 200 : 503;
+
+    if (req.method === "HEAD") {
+      res.writeHead(statusCode, { "content-type": "application/json; charset=utf-8" });
+      res.end();
+      return;
+    }
+
+    sendJson(res, statusCode, {
       status: readiness.ready ? "ready" : "not_ready",
       ...readiness,
       timestamp: new Date().toISOString()
