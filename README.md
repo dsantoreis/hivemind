@@ -85,7 +85,7 @@ Published docs: https://dsantoreis.github.io/hivemind/
 - Local: `cd docs-site && npm install && npm run dev`
 - Published: https://dsantoreis.github.io/hivemind/ (GitHub Pages via `.github/workflows/docs.yml`)
 
-## Benchmarks and resilience
+## Benchmarks, cobertura e resilience
 
 - k6 load test: `load-tests/k6-workflows.js`
 - Chaos test: `chaos/fault_injection_test.py`
