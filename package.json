@@ -1,5 +1,5 @@
 {
-  "name": "ai-agent-demo",
+  "name": "hivemind",
   "version": "0.1.0",
   "private": true,
   "description": "Demo funcional de orquestração multi-agente em TypeScript",
@@ -25,7 +25,7 @@
     "demo"
   ],
   "author": "",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "devDependencies": {
     "@types/node": "^24.5.2",
     "tsx": "^4.20.5",

@@ -1,34 +1,26 @@
-# AI Agent Demo — Enterprise Multi-Agent Workflow Platform
+# Hivemind
 
-[![CI](../../actions/workflows/ci.yml/badge.svg)](#) [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
+[![CI](https://github.com/dsantoreis/hivemind/actions/workflows/ci.yml/badge.svg)](https://github.com/dsantoreis/hivemind/actions/workflows/ci.yml)
+[![Docs](https://github.com/dsantoreis/hivemind/actions/workflows/docs.yml/badge.svg)](https://github.com/dsantoreis/hivemind/actions/workflows/docs.yml)
+[![Coverage](https://img.shields.io/badge/coverage-%3E80%25-brightgreen)](#quality-gates)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 
+Production-ready multi-agent orchestration for ops teams that need reliable routing and observability under load.
 
-[![CI](./.github/workflows/ci.yml)](./.github/workflows/ci.yml)
+![Hivemind dashboard preview](docs/screenshots/dashboard-overview.png)
 
-Production-style FastAPI orchestration + Next.js real-time dashboard for multi-agent workflows.
+## Problem
 
-## Highlights
+Most agent demos break when they hit real usage patterns. Teams need authentication, throttling, metrics, graceful shutdown, and repeatable deployment paths, not toy flows.
 
-- **Real-time dashboard (Next.js/React)**: `frontend-next/` polling workflow stream every 2s.
-- **Auth**: API Key and JWT (`POST /auth/token`).
-- **Rate limiting**: in-memory sliding window guard (`429`).
-- **Structured logging JSON**: startup, workflow creation, shutdown events.
-- **Observability**:
-  - Prometheus metrics at `GET /metrics`
-  - OpenTelemetry tracing (OTLP exporter, env-driven)
-- **Graceful shutdown**: FastAPI lifespan hook with explicit shutdown logs.
-- **CI pipeline**: lint + unit + integration + e2e + coverage gate `>80%`.
-- **Containers/K8s**: Docker multi-stage + manifests (Deployment/Service/HPA).
-- **Performance/Resilience testing**:
-  - k6 load test (`1000 rps`, `5m`) in `load-tests/k6-workflows.js`
-  - chaos simulation in `chaos/fault_injection_test.py`
-  - soak script (`1h`) in `soak/soak_test.sh`
+## What Hivemind ships
 
-## Architecture
-
-- Backend: FastAPI (`src/ai_agent_demo`)
-- Dashboard: Next.js (`frontend-next`)
-- Tests: pytest + vitest
+- FastAPI orchestration backend with API key and JWT auth
+- Next.js dashboard for workflow visibility
+- Prometheus metrics and OTLP tracing hooks
+- Docker and Docker Compose for local and CI parity
+- Kubernetes deployment, service, autoscaling, and ingress manifests
+- Quality gates in CI for lint, tests, and coverage over 80%
 
 ## Quickstart
 
@@ -38,7 +30,7 @@ pip install -e .[dev]
 uvicorn ai_agent_demo.main:app --reload
 ```
 
-### Dashboard
+Dashboard:
 
 ```bash
 cd frontend-next
@@ -46,70 +38,62 @@ npm install
 npm run dev
 ```
 
-## API
+## Architecture
 
-- `POST /auth/token` (header: `x-api-key`)
-- `GET /health`
-- `GET /metrics`
-- `POST /v1/research/workflows` (auth required)
-- `GET /v1/research/workflows`
-- `GET /v1/research/workflows/{workflow_id}`
-- `GET /v1/research/stream`
+```mermaid
+flowchart LR
+    UI[Next.js Dashboard] --> API[FastAPI Orchestrator]
+    API --> W[(Workflow Store)]
+    API --> METRICS[/Prometheus Metrics/]
+    API --> TRACE[/OTLP Trace Export/]
+```
 
-## Benchmark Table (placeholder results)
+## Quality gates
 
-| Scenario | Target | Result | Notes |
-|---|---:|---:|---|
-| k6 create workflow | 1000 rps / 5 min | _pending run_ | `load-tests/k6-workflows.js` |
-| Chaos fault injection | 50% flaky search | pass/fail tolerant | `chaos/fault_injection_test.py` |
-| Soak endurance | 1h | _pending run_ | `soak/soak_test.sh` |
+- Python lint and test suites
+- Node lint and test suites
+- Coverage gate enforced in CI: `--cov-fail-under=80`
+- Docker image build on every push and pull request
 
-## Screenshot placeholders
+## Deployment
 
-- `docs/screenshots/dashboard-overview.png`
-- `docs/screenshots/workflow-table.png`
-- `docs/screenshots/metrics-panel.png`
+### Docker
 
-## Kubernetes
+```bash
+docker build -t hivemind:latest .
+docker compose up --build
+```
+
+### Kubernetes
 
 ```bash
 kubectl apply -f k8s/deployment.yaml
 kubectl apply -f k8s/hpa.yaml
+kubectl apply -f k8s/ingress.yaml
 ```
-
-
-## Conversion Standard
-
-### Hero
-Production-ready solution for a concrete business problem with measurable outcome.
-
-### Problem
-Describe the pain with one sentence and a real operator context.
-
-### Demo
-Add a GIF at `docs/assets/demo.gif` and reference it here.
-
-### Quickstart (3 commands)
-```bash
-make setup || pnpm install || npm install
-make test || pnpm test || npm test
-make run || pnpm dev || npm run dev
-```
-
-### Architecture
-Document API, workers, and storage in `docs/architecture.md`.
-
-### Results
-Add benchmark, latency, throughput, or conversion impact.
-
-### Roadmap
-Include 30-day and 90-day milestones.
-
-### CTA
-If this helps, star the repo and open an issue with your use case.
-
 
 ## Docs
 
-- Local docs site config: `mkdocs.yml`
-- Entry point: `docs/index.md`
+Full docs site (Astro Starlight): `docs-site/`
+
+- Local: `cd docs-site && npm install && npm run dev`
+- Published: GitHub Pages via `.github/workflows/docs.yml`
+
+## Benchmarks and resilience
+
+- k6 load test: `load-tests/k6-workflows.js`
+- Chaos test: `chaos/fault_injection_test.py`
+- Soak test: `soak/soak_test.sh`
+
+## Roadmap
+
+- Multi-tenant workflow isolation
+- Persistent event store backend
+- Agent execution replay
+- SLO dashboard packs
+
+## Awesome use cases
+
+See `awesome-use-cases.md`.
+
+If this project helps your team ship agent workflows faster, star the repo and share your use case in an issue.

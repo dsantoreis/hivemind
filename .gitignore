@@ -7,3 +7,5 @@ __pycache__/
 .venv/
 *.egg-info/
 frontend-next/.next/
+docs-site/.astro/
+.coverage
