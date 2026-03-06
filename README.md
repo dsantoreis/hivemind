@@ -105,4 +105,4 @@ Docs deployment is automated with GitHub Pages via `.github/workflows/docs.yml`.
 See `awesome-use-cases.md`.
 
 If this project helps your team ship agent workflows faster, star the repo and share your use case in an issue.
-PRs with benchmark output, coverage deltas, CI log links, and before/after latency notes are welcome.
+PRs with benchmark output, coverage deltas, CI log links, and before/after latency or memory notes are welcome.
