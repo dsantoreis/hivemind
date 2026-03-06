@@ -9,7 +9,7 @@ Production-ready multi-agent orchestration for ops teams that need reliable rout
 
 ## Hero
 
-Turn scattered AI automations into one reliable control plane with auditable routing, rate limits, and real-time observability.
+Turn scattered AI automations into one reliable control plane with auditable routing, rate limits, and real-time observability in production.
 
 ![Hivemind dashboard preview](docs/screenshots/dashboard-overview.png)
 ![Hivemind live demo GIF](docs/screenshots/dashboard-demo.gif)
