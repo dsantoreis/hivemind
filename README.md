@@ -81,6 +81,7 @@ kubectl apply -f k8s/ingress.yaml
 
 Full docs site (Astro Starlight): `docs-site/`
 Published docs: https://dsantoreis.github.io/hivemind/
+Docs deployment is automated with GitHub Pages via `.github/workflows/docs.yml`.
 
 - Local: `cd docs-site && npm install && npm run dev`
 - Published: https://dsantoreis.github.io/hivemind/ (GitHub Pages via `.github/workflows/docs.yml`)
