@@ -57,7 +57,7 @@ flowchart LR
 
 - Python lint and test suites
 - Node lint and test suites
-- Coverage gate enforced in CI: `--cov-fail-under=80`
+- Coverage gate enforced in CI: `--cov-fail-under=80` and Node coverage thresholds in `vitest.config.ts`
 - Docker image build on every push and pull request
 
 ## Deployment
