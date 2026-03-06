@@ -16,7 +16,7 @@ Turn scattered AI automations into one reliable control plane with auditable rou
 
 ## Problem
 
-Most agent demos break when they hit real usage patterns. Teams need authentication, throttling, metrics, graceful shutdown, and repeatable deployment paths, not toy flows.
+Most agent demos break when they hit real usage patterns in production. Teams need authentication, throttling, metrics, graceful shutdown, and repeatable deployment paths, not toy flows.
 
 ## What Hivemind ships
 
